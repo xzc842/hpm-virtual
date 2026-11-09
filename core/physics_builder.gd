@@ -8,6 +8,21 @@
 class_name PhysicsBuilder
 extends RefCounted
 
+## 合并设备包默认值与 virtual.json 的实例覆盖；实例规则优先。
+static func merge_overrides(base: Dictionary, instance: Dictionary) -> Dictionary:
+	var physics: Dictionary = base.get("physics", {}).duplicate(true)
+	var instance_physics: Variant = instance.get("physics", {})
+	if typeof(instance_physics) == TYPE_DICTIONARY:
+		for key: Variant in instance_physics:
+			physics[key] = instance_physics[key]
+
+	var objects: Array = []
+	var instance_objects: Variant = instance.get("objects", [])
+	if typeof(instance_objects) == TYPE_ARRAY:
+		objects.append_array(instance_objects)
+	objects.append_array(base.get("objects", []))
+	return {"physics": physics, "objects": objects}
+
 static func apply(
 	root: Node,
 	default_physics: Dictionary = {},

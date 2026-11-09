@@ -22,9 +22,18 @@ res://
   core/debug_service.gd     # Autoload Bridge：会话探测、SSE、输入
   core/sse_parser.gd        # text/event-stream 解析
   sdk/virtual_device.gd     # 外部脚本基类
-  examples/demo-project/    # 可直接运行的演示工程 + 演示设备包
-  tools/build_demo_assets.gd# 无 Blender 生成演示 GLB/glTF
-  tests/smoke_test.gd       # 43 项无头检查
+  blender_addon/hpm_virtual/# Blender 插件：模型列表/拖入/摩擦/自定义包/导出
+  examples/demo-project/    # 内嵌演示设备包，不依赖 ~/.hpm
+  examples/real-project/    # 真实 gpio/pwm 设备包 + 虚拟场景
+  examples/blink/           # 完整固件工程：stc90c51 + gpio LED 闪烁
+  tools/build_demo_assets.gd   # 生成演示 GLB/glTF
+  tools/build_device_assets.gd # 直接生成模型到已安装设备包
+  tools/mock_debug_service.py  # 模拟 hpm-gui 调试服务
+  tests/smoke_test.gd          # 43 项无头检查
+  tests/real_packages_test.gd  # 18 项真实设备包检查
+  tests/override_test.gd       # 9 项自定义虚拟包解析检查
+  tests/blender_addon_test.py  # Blender 无头端到端测试
+  tests/pwm_plugin_test.c      # pwm debug.c 单元测试
 ```
 
 ### 运行
@@ -36,9 +45,21 @@ godot --path .
 godot --headless --path . --script res://tests/smoke_test.gd
 # 直接打开演示项目（-- 之后是用户参数）
 godot --path . -- --project=examples/demo-project
+# 真实设备包工程
+godot --path . -- --project=examples/real-project
+# Blink 完整工程（先用 hpm build，见 examples/blink/README.md）
+godot --path . -- --project=examples/blink
+# 测试
+godot --headless --path . --script res://tests/smoke_test.gd
+godot --headless --path . --script res://tests/real_packages_test.gd
+godot --headless --path . --script res://tests/override_test.gd
+tests/run_pwm_plugin_test.sh
+tests/run_blender_addon_test.sh
 ```
 
 演示工程使用项目内 `packages/`，因此不依赖 `~/.hpm/packages` 也能测试。
+真实设备虚拟资产直接放在 `~/.hpm/packages/gpio-*/debug` 与
+`~/.hpm/packages/pwm-stc90c51-*/debug`，仓库不再保留副本。
 
 ## 3. 数据流
 
@@ -83,28 +104,43 @@ virtual/virtual.glb ───────────────┘
 - [x] `virtual.gd` 缓存加载，生命周期回调与 `send/invoke`。
 - [x] `/debugger` 探测、项目路径校验、SSE 输出流、自动重连、输入队列。
 - [x] 演示工程 + 演示包 + 无头测试 + 模拟服务端到端验证。
+- [x] 真实设备包：gpio(LED) 与 pwm(舵机) 的 `device.json`、`device.gltf`、`virtual.gd` 安装进包。
+- [x] pwm 的 `debug.c`：监听 PWM 引脚，高电平占空比 5%–10% 映射到 0–180°。
+- [x] 模型节点按设备类型加前缀（`LedBody`、`ServoHorn`），避免 GLB 内重名重命名。
+- [x] 真实设备工程、18 项包测试、PWM 插件单元测试、截图验证。
+- [x] 自定义虚拟包运行时解析（`override` 字符串/对象/路径、项目内 `virtual/packages`）。
+- [x] Blender 插件：模型列表、模态拖入、“编辑”弹窗（开关 + 文件夹路径）、按物体摩擦、导出。
+- [x] 自定义包只影响新拖入的实例；场景里已有实例保持各自的 `hpm_override`。
+- [x] 导出时复制覆盖包、缺 manifest 自动生成、GLB 节点与 `virtual.json` 对齐。
+- [x] Blink 完整工程：`project.toml/json`、`main.c`、`debug.toml`、`run.sh`、虚拟场景；
+  `hpm sync/build` 通过，模拟器输出 `power=on/off`。
 
 ## 5. 下一步（按优先级）
 
-1. **Blender 插件**（M4）：读项目/包列表、放置设备、编辑每个物体摩擦、导出 `virtual.glb + virtual.json`。
-   - 自定义面板不支持原生拖拽，采用 Asset Browser + 模态放置算子。
-   - `device.json` 的 `objects` 由对象自定义属性/材质面板生成。
-2. **真实设备包**：给 `~/.hpm/packages/*/debug/` 补 `device.json`、`device.gltf`、`virtual.gd`；先做 LED、按键、串口、舵机。
-3. **交互输入**：3D 点击/拖拽 → `send()/invoke()`；HUD 按 `/devices` 的 `channels` 生成控件。
-4. **动画/物理细化**：带骨骼设备的 `_on_tick`，摩擦系数实测标定（`rough` 组合规则），刚体/关节场景。
-5. **健壮性**：SSE `reset`/缺口、会话中断重连、包版本不匹配提示、日志面板。
-6. **打包**：Linux/Windows 导出模板，插件 zip，演示视频/文档。
+1. **交互输入**：3D 点击/拖拽 → `send()/invoke()`；HUD 按 `/devices` 的 `channels` 生成控件。
+2. **动画/物理细化**：带骨骼设备的 `_on_tick`，摩擦系数实测标定（`rough` 组合规则），刚体/关节场景。
+3. **健壮性**：SSE `reset`/缺口、会话中断重连、包版本不匹配提示、日志面板。
+4. **Blender 原生拖拽**：Asset Browser 资源库（当前是模态放置）。
+5. **打包**：Linux/Windows 导出模板，插件 zip，演示视频/文档。
 
 ## 6. 验证
 
 - 无头冒烟：43 项（SSE 分块/CRLF、项目解析、包解析、GLB、摩擦数值、脚本加载与发光）。
-- 端到端：[tools/mock_debug_service.py](../tools/mock_debug_service.py) 模拟 `/debugger`、`/devices`、`/outputs/stream`，
-  运行后能看到 `调试会话开始` 和 `LED 亮`。
-- 待补：真实 hpm-gui 会话、输入 POST 的自动化断言、Blender 导出回读。
+- 真实设备包：18 项（包解析、模型节点、13 个碰撞体、舵机摆臂摩擦/旋转、LED 颜色与发光、实例级物理覆盖）。
+- PWM 插件：8 项（ABI、初始 90°、1ms→0°、1.5ms→90°、2ms→180°）。
+- 自定义包解析：9 项（按名/路径、device.json/脚本覆盖、缺失回退）。
+- Blender 插件：加载真实工程 → 放置 LED/舵机 → 编辑摩擦 → 覆盖模型 → 导出 →
+  自动生成 manifest；导出工程再由 Godot 打开，日志出现 `OVERRIDE LED BOUND`。
+- 端到端：[tools/mock_debug_service.py](../tools/mock_debug_service.py) 同时推送 LED 与舵机值，
+  截图见 [real-devices.png](images/real-devices.png)。
+- Blink 固件：`hpm sync --offline && hpm build` 成功；`hpm debug --json --run` 连续输出
+  `power=on/off`。
+- 待补：真实 hpm-gui 会话的自动化断言、输入 POST 的自动化断言。
 
 ## 7. 已知限制
 
-- 当前 Blender 只做到“启动程序”，插件本身尚未实现。
+- Blender 插件用模态放置代替原生拖拽；自定义面板无法直接支持拖出到 3D 视图。
+- pwm 的 `debug.c` 需要 `hpm debug` 在调试时重新编译插件；旧的已编译 `.so` 不会自动更新。
 - 设备模型动画节点如果有骨骼，按物体生成的静态碰撞不会跟随骨骼，需要后续改成动态碰撞。
 - 输出流只处理 `snapshot/device/reset`；`/events/stream` 的日志/断点事件未接入。
 - 没有多板卡/多项目并行，一个进程同时只打开一个项目。

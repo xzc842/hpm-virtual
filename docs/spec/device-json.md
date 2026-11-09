@@ -43,6 +43,7 @@ Blender 插件用它加载模型并摆放；Godot 运行时用它加载外部脚
 ### physics / objects
 
 与 `virtual.json` 完全一致，见 [virtual-json.md](virtual-json.md#physics)。
+自定义虚拟包可以提供自己的 `device.json`，覆盖这里的默认值。
 
 - `physics` 是该设备所有网格的默认值，未写时用 `0.8`。
 - `objects[].node` 相对设备模型根节点（如 `Body`、`Lamp`）。

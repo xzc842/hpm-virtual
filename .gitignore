@@ -4,3 +4,12 @@
 
 # 本地临时文件
 .tmp/
+
+# 文档截图不需要 Godot 导入
+/docs/images/*.import
+
+# Python
+__pycache__/
+
+# 打包产物
+/dist/

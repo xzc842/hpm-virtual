@@ -1,0 +1,58 @@
+# Copyright 2026 XueZicheng <xuezicheng842@outlook.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# mcus 常规运行配置
+# 启动方式：
+#   mcus <model.json> <firmware.bin> config/example.toml
+
+[simulator]
+# 共享内存对象名（POSIX shm_open 使用，需以 / 开头）
+shm_name = "/mcus_shm"
+
+# 事件流对象名
+stream_name = "/mcus_stream"
+
+# 事件流环形队列容量（条数）。满时触发背压，CPU 暂停推进。
+stream_capacity = 4096
+
+# 启动后是否立即暂停，等待外部程序就绪
+start_paused = false
+
+# 控制区命令轮询间隔（虚拟时间片数），仅用于降低 CPU 空转
+control_poll_interval = 64
+
+clock_step_interval = 100
+
+# 外部程序 attach 事件流后，SPI 等同步总线等待响应的真实时间上限（毫秒）。
+# 0 = 无限等待；超时后使用默认 MISO(0xFF) 完成传输。
+bus_wait_timeout_ms = 1000
+
+
+[crystal]
+# 虚拟晶振频率（Hz）。所有虚拟时间以此为基准，不跟真实时间对齐。
+frequency_hz = 11059200
+
+# 每条指令粗略消耗的晶振周期数。后续可按指令类型细化。
+cycles_per_instruction = 4
+
+
+[debug]
+# 日志级别：trace / debug / info / warn / error
+log_level = "info"
+
+# 日志输出：stderr 或文件路径
+log_output = "stderr"
+
+# dump 命令输出的默认文件前缀（可选）
+dump_prefix = "/tmp/mcus_dump"

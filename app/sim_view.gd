@@ -17,6 +17,7 @@ var _report: Dictionary = {
 	"scene_loaded": false,
 	"placeholder": false,
 	"bound": [],
+	"overrides": [],
 	"errors": [],
 	"missing_nodes": [],
 	"physics_bodies": 0,
@@ -139,11 +140,14 @@ func _bind_device(instance: Dictionary) -> void:
 		return
 
 	var device_json: Dictionary = resolved.get("device_json", {})
-	var physics: Dictionary = device_json.get("physics", {})
-	var overrides: Array = device_json.get("objects", [])
+	var merged := _merge_physics(device_json, instance)
 	_report["physics_bodies"] += PhysicsBuilder.apply(
-		node, physics, overrides, DEVICE_DEFAULT_FRICTION
+		node, merged["physics"], merged["objects"], DEVICE_DEFAULT_FRICTION
 	)
+	if not String(resolved.get("override_error", "")).is_empty():
+		_report["errors"].append("设备 %s：%s" % [device_name, resolved.get("override_error")])
+	elif not (resolved.get("override", {}) as Dictionary).is_empty():
+		_report["overrides"].append(device_name)
 
 	_device_nodes[device_name] = node
 
@@ -178,6 +182,10 @@ func _bind_device(instance: Dictionary) -> void:
 	(instance_node as VirtualDevice)._host_bind(Bridge, ctx)
 	_device_scripts[device_name] = instance_node
 	_report["bound"].append(device_name)
+
+## 实例级 physics/objects 覆盖 device.json 的默认值；实例规则优先。
+func _merge_physics(device_json: Dictionary, instance: Dictionary) -> Dictionary:
+	return PhysicsBuilder.merge_overrides(device_json, instance)
 
 func _find_device_node(path: String, device_name: String) -> Node3D:
 	var node: Node = null

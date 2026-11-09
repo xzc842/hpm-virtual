@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "scene": "virtual.glb",
+  "physics": { "friction": 0.8, "rough": true },
+  "objects": [
+    { "node": "Environment/Floor", "physics": { "friction": 0.9, "rough": true } }
+  ],
+  "devices": [
+    {
+      "name": "led",
+      "title": "LED",
+      "node": "Devices/led",
+      "package": "gpio",
+      "version": "1.0.0",
+      "props": { "color": "red" }
+    },
+    {
+      "name": "servo",
+      "title": "舵机",
+      "node": "Devices/servo",
+      "package": "pwm-stc90c51",
+      "version": "1.0.0",
+      "props": { "speed_deg_per_s": 240 }
+    }
+  ]
+}

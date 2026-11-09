@@ -74,6 +74,9 @@ Godot 打开项目时读取。`virtual.glb` 里同一场景的节点名必须与
 | `script` | 否 | 覆盖 `device.json` 的 `script`。 |
 | `model` | 否 | 覆盖 `device.json` 的 `model`（给 Blender 插件用）。 |
 | `props` | 否 | 传给脚本 `_on_bind(ctx.props)` 的实例参数。 |
+| `physics` | 否 | 实例级默认物理参数，覆盖设备包 `device.json` 的同名字段。 |
+| `objects` | 否 | 实例级按物体物理覆盖，规则同 `device.json`，优先于设备包规则。 |
+| `override` | 否 | 自定义虚拟包（字符串或 `{name, version, path}`），覆盖模型/`device.json`/`virtual.gd`。见 [custom-virtual-pack.md](custom-virtual-pack.md)。 |
 | `title` | 否 | 显示名；运行时会被调试服务返回的 `title` 覆盖。 |
 
 ## 加载规则
@@ -81,8 +84,10 @@ Godot 打开项目时读取。`virtual.glb` 里同一场景的节点名必须与
 1. 读 `virtual/virtual.json` 和 `virtual/virtual.glb`；GLB 缺失时进入占位环境并给出警告。
 2. 先按 `devices[].node` 找设备节点，找不到再按 `name` 递归找；仍找不到记入报告。
 3. 场景物理跳过所有设备子树，设备摩擦由 `device.json` 决定，避免双重覆盖。
-4. 每个设备实例独立解析包、脚本和物理；单个设备失败不影响其它设备。
-5. 设备节点缺失或包缺失只报告，不阻止场景打开。
+4. 有 `override` 时，脚本和物理优先取自定义包，缺失项回退到设备包；模型已在导出时烘焙进 GLB。
+5. 实例级 `physics`/`objects` 与设备包合并：先应用设备包规则，再应用实例规则（同节点实例优先）。
+6. 每个设备实例独立解析包、脚本和物理；单个设备失败不影响其它设备。
+7. 设备节点缺失或包缺失只报告，不阻止场景打开。
 
 ## 与 project.json 的关系
 

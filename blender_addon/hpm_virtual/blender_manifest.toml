@@ -1,0 +1,17 @@
+schema_version = "1.0.1"
+
+id = "hpm_virtual"
+version = "1.0.1"
+name = "HPM Virtual"
+tagline = "HPM 虚拟场景编辑与导出"
+maintainer = "HPM <xuezicheng842@outlook.com>"
+type = "add-on"
+
+blender_version_min = "4.2.0"
+
+license = [
+  "SPDX:GPL-3.0-or-later",
+]
+
+[permissions]
+files = "读取 HPM 设备包并写入项目的 virtual 资产"
