@@ -1,3 +1,19 @@
+# Copyright (C) 2026 XueZicheng <xuezicheng842@outlook.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 # 按物体生成静态碰撞与摩擦。
 #
 # 每个 MeshInstance3D 得到一个 StaticBody3D 子节点，摩擦来自：
@@ -39,7 +55,7 @@ static func apply(
 		var entry: Dictionary = item
 		var target := find_node(root, String(entry.get("node", "")))
 		if target == null:
-			push_warning("physics override 找不到节点：%s" % entry.get("node", ""))
+			print_verbose("physics override 跳过不存在的节点：%s" % entry.get("node", ""))
 			continue
 		var physics: Variant = entry.get("physics", {})
 		if typeof(physics) == TYPE_DICTIONARY:

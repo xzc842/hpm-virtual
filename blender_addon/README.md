@@ -9,7 +9,7 @@
 
 ```bash
 tools/package_blender_addon.sh
-# dist/hpm_virtual-1.0.2.zip
+# dist/hpm_virtual-1.0.5.zip
 ```
 
 Blender：`编辑 > 偏好设置 > 获取扩展 > 从磁盘安装`，选择该 zip，启用 “HPM Virtual”。
@@ -61,6 +61,6 @@ blender --background --factory-startup --python-expr \
 tests/run_blender_addon_test.sh
 ```
 
-脚本在无头 Blender 中：加载 `examples/real-project` → 放置 LED/舵机 → 修改摩擦 →
-设置自定义包 → 导出 → 检查 `virtual.json` / GLB / 自动生成 manifest；
+脚本在无头 Blender 中：加载 `examples/project1` → 放置两个 LED/舵机 → 修改摩擦 →
+设置自定义包（`clickable-led`）→ 导出 → 检查 `virtual.json` / GLB / manifest；
 再用 Godot 打开导出工程验证覆盖脚本生效。

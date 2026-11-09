@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "scene": "virtual.glb",
+  "physics": { "friction": 0.8, "rough": true },
+  "objects": [
+    { "node": "Environment/Floor", "physics": { "friction": 0.9, "rough": true } }
+  ],
+  "devices": [
+    {
+      "name": "led1",
+      "title": "LED 1",
+      "node": "Devices/led1",
+      "package": "gpio",
+      "version": "1.0.0",
+      "props": { "color": "red" }
+    },
+    {
+      "name": "led2",
+      "title": "可点击 LED",
+      "node": "Devices/led2",
+      "package": "gpio",
+      "version": "1.0.0",
+      "props": { "color": "green" },
+      "override": { "name": "clickable-led", "version": "1.0.0" }
+    },
+    {
+      "name": "servo",
+      "title": "舵机",
+      "node": "Devices/servo",
+      "package": "pwm",
+      "version": "1.0.0",
+      "props": { "speed_deg_per_s": 240 }
+    }
+  ]
+}

@@ -1,3 +1,19 @@
+# Copyright (C) 2026 XueZicheng <xuezicheng842@outlook.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 """HPM Virtual Blender 插件：打开项目、放置设备、编辑摩擦、导出自定义虚拟包。"""
 
 from __future__ import annotations
@@ -9,7 +25,7 @@ from . import data, exporter, operators, panels, scene, state
 bl_info = {
     "name": "HPM Virtual",
     "author": "HPM",
-    "version": (1, 0, 2),
+    "version": (1, 0, 5),
     "blender": (4, 2, 0),
     "location": "3D 视图 > 侧栏 > HPM",
     "description": "HPM 虚拟环境编辑与导出",
@@ -31,9 +47,19 @@ _CLASSES = (
 )
 
 
+def _on_load_post(_filepath=None) -> None:
+    try:
+        scene.migrate_legacy_props()
+        state.recover_entries(bpy.context, persist=True)
+    except Exception as exc:  # 打开旧文件时不要让插件崩溃
+        print(f"[hpm_virtual] 恢复场景状态失败: {exc}")
+
+
 def register() -> None:
     for cls in _CLASSES:
         bpy.utils.register_class(cls)
+    if _on_load_post not in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.append(_on_load_post)
 
     bpy.types.Scene.hpm_project_path = bpy.props.StringProperty(
         name="项目目录", subtype="DIR_PATH", default=""
@@ -61,6 +87,8 @@ def register() -> None:
 
 
 def unregister() -> None:
+    if _on_load_post in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(_on_load_post)
     for prop_name in (
         "hpm_project_path", "hpm_mcu", "hpm_device_entries", "hpm_model_settings",
         "hpm_custom_packs", "hpm_last_export",

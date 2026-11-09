@@ -1,0 +1,17 @@
+{
+  "name": "gpio",
+  "display_name": "可点击 LED",
+  "version": "1.0.0",
+  "model": "model.gltf",
+  "script": "virtual.gd",
+  "physics": { "friction": 0.55, "rough": true, "bounce": 0.1 },
+  "objects": [
+    { "node": "Body", "physics": { "friction": 0.35, "rough": true, "bounce": 0.2 } },
+    { "node": "Base2", "physics": { "friction": 0.65, "rough": true } },
+    { "node": "Anode2", "physics": { "friction": 0.75, "rough": true } },
+    { "node": "Cathode2", "physics": { "friction": 0.75, "rough": true } }
+  ],
+  "channels": {
+    "power": { "title": "电源", "type": "bool", "widget": "lamp", "readonly": true }
+  }
+}

@@ -1,3 +1,19 @@
+# Copyright (C) 2026 XueZicheng <xuezicheng842@outlook.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 """Blender 3D 视图侧栏面板。"""
 
 from __future__ import annotations
@@ -20,6 +36,11 @@ class HPM_PT_project(bpy.types.Panel):
         layout = self.layout
         scene_data = context.scene
         layout.prop(scene_data, "hpm_project_path", text="项目目录")
+        if not scene_data.hpm_project_path:
+            legacy_path = state.get_project_path(context)
+            if legacy_path:
+                layout.label(text="旧文件项目：" + legacy_path, icon="INFO")
+                layout.label(text="点“加载项目”迁移到新属性")
         row = layout.row(align=True)
         row.operator("hpm_virtual.load_project", text="加载项目", icon="FILE_FOLDER")
         row.operator("hpm_virtual.refresh_project", text="", icon="FILE_REFRESH")
@@ -56,7 +77,7 @@ class HPM_PT_devices(bpy.types.Panel):
             return
         for entry in entries:
             name = str(entry.get("name", ""))
-            root = scene.find_device_root(name)
+            root = scene.find_device_root(name) or scene.find_object(name)
             setting = state.get_setting(context, name)
             box = layout.box()
             row = box.row()
@@ -96,7 +117,7 @@ class HPM_PT_friction(bpy.types.Panel):
             layout.label(text="选中一个网格物体后编辑")
             return
         layout.label(text=f"对象：{obj.name}")
-        owner = "设备" if obj.hpm_physics_owner == "device" else "环境"
+        owner = "设备" if scene.get_prop(obj, "hpm_physics_owner", "") == "device" else "环境"
         layout.label(text=f"归属：{owner}")
         column = layout.column(align=True)
         column.prop(obj, "hpm_friction", text="摩擦系数")

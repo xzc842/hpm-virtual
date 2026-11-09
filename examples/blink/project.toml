@@ -1,5 +1,0 @@
-mcu = "stc90c51"
-
-[devices.led]
-driver = "gpio"
-pin = "P1_0"

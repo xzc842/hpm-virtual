@@ -1,3 +1,19 @@
+# Copyright (C) 2026 XueZicheng <xuezicheng842@outlook.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 """导出 virtual.glb + virtual.json，并打包自定义虚拟包。"""
 
 from __future__ import annotations
@@ -15,10 +31,10 @@ from . import data, scene
 def _physics_dict(obj: bpy.types.Object) -> dict[str, Any]:
     scene.ensure_physics_props(obj)
     return {
-        "friction": round(float(obj.hpm_friction), 4),
-        "rough": bool(obj.hpm_rough),
-        "bounce": round(float(obj.hpm_bounce), 4),
-        "enabled": bool(obj.hpm_physics_enabled),
+        "friction": round(float(scene.get_prop(obj, "hpm_friction", 0.8)), 4),
+        "rough": bool(scene.get_prop(obj, "hpm_rough", True)),
+        "bounce": round(float(scene.get_prop(obj, "hpm_bounce", 0.0)), 4),
+        "enabled": bool(scene.get_prop(obj, "hpm_physics_enabled", True)),
     }
 
 
@@ -41,7 +57,7 @@ def _device_objects(entry: dict[str, Any], root: bpy.types.Object) -> dict[str, 
         "objects": _mesh_objects(root),
     }
     try:
-        props = json.loads(str(root.hpm_props or "{}"))
+        props = json.loads(str(scene.get_prop(root, "hpm_props", "") or "{}"))
         if isinstance(props, dict) and props:
             payload["props"] = props
     except ValueError:
@@ -78,7 +94,7 @@ def _scene_path(obj: bpy.types.Object) -> str:
 
 
 def _instance_override(root: bpy.types.Object) -> dict[str, Any]:
-    raw = str(root.hpm_override or "")
+    raw = str(scene.get_prop(root, "hpm_override", "") or "")
     if not raw:
         return {}
     try:

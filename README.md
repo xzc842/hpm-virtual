@@ -9,55 +9,62 @@ HPM 虚拟仿真环境：Godot 4.7 程序打开 HPM 工程，加载 `virtual/` �
 # 打开程序（欢迎页）
 godot --path .
 
-# 演示：内嵌设备包（不依赖 ~/.hpm）
-godot --path . -- --project=examples/demo-project
+# 示例 1：一个舵机 + 两个 LED，固件控制舵机转动、LED 闪烁
+godot --path . -- --project=examples/project1
 
-# 真实设备包：gpio(LED) + pwm(舵机)，需要已安装的 ~/.hpm/packages
-godot --path . -- --project=examples/real-project
+# 示例 2：与示例 1 相同，但 led2 通过自定义虚拟包换成了可点击交互的 LED
+godot --path . -- --project=examples/project2
 
-# 完整闪烁工程：固件 + 虚拟场景（构建见 examples/blink/README.md）
-cd examples/blink && ./run.sh
-
-# 全部测试（Godot 55 + 18 + 9 项 + 标尺/交互动作用例，PWM 8 项，Blink 固件，Blender 端到端）
+# 全部测试
 tests/run_all.sh
-# 也可以单独跑
-godot --headless --path . --script res://tests/smoke_test.gd
-godot --headless --path . --script res://tests/real_packages_test.gd
-godot --headless --path . --script res://tests/override_test.gd
-tests/run_pwm_plugin_test.sh
-tests/run_blender_addon_test.sh
-tests/run_blink_test.sh
-# 单独跑标尺/交互测试
-godot --headless --path . res://tests/ruler_input_test.tscn
-godot --headless --path . res://tests/interaction_test.tscn
 ```
 
-用本地模拟服务看动画：
+示例工程都有对应的 Blender 文件：
+
+```
+examples/project1/virtual/virtual.blend
+examples/project2/virtual/virtual.blend
+```
+
+## 两个示例
+
+| 工程 | 内容 |
+| --- | --- |
+| `examples/project1` | STC90C51 + 舵机(P1_0) + led1(P1_1) + led2(P1_2)。固件让舵机在 0°/90°/180° 之间转动，两个 LED 交替/同时闪烁。 |
+| `examples/project2` | 与 project1 相同的固件和场景；`led2` 在 `virtual.json` 中 `override` 到自定义虚拟包 `clickable-led`，点击可切换红/蓝颜色。 |
+
+![project1：舵机 + 两个 LED](docs/images/project1.png)
+
+构建与调试：
 
 ```bash
-python3 tools/mock_debug_service.py "$PWD/examples/real-project" 18085 30 &
-HPM_GUI_SERVICE_URL=http://127.0.0.1:18085 \
-  godot --path . -- --project=examples/real-project
+cd examples/project1      # 或 project2
+hpm sync --offline
+hpm build
+./run.sh                  # 在 mcus 模拟器里验证
 ```
 
-![真实设备：LED 点亮、舵机转动](docs/images/real-devices.png)
+在虚拟环境里看效果：
 
-Blink 工程：`P1_0` 固件闪烁 → gpio 调试插件 → hpm-gui 输出流 → 虚拟 LED：
-
-![Blink 虚拟 LED](docs/images/blink-demo.png)
+1. `python3 main.py` 启动 hpm-gui，打开对应工程并「启动调试」。
+2. 另开终端：
+   ```bash
+   godot --path . -- --project=examples/project1
+   ```
+3. Godot 自动连接调试服务，舵机与 LED 跟随固件动作。
+4. 右键删除标尺、左键画标尺；选择模式下点击 project2 的 led2 可切换颜色。
 
 ## 目录
 
 ```
 app/                  欢迎页、HUD、仿真视图
-core/                 项目/包/模型/物理/调试服务/脚本宿主
+core/                 项目/包/模型/物理/调试服务/脚本宿主/标尺
 sdk/virtual_device.gd 设备外部脚本基类（公开接口）
-examples/demo-project 自带设备包的演示工程
-examples/real-project 使用真实 gpio/pwm 设备包的工程
-examples/blink       完整固件工程：LED 闪烁 + 虚拟场景
+examples/project1     完整固件 + 虚拟场景 + virtual.blend
+examples/project2     project1 + 自定义虚拟包（可点击 LED）
 blender_addon/        Blender 插件（模型列表、拖入、摩擦、自定义包、导出）
-tools/                生成 GLB、模拟调试服务、打包插件
-tests/                冒烟/真实设备/覆盖包/PWM/Blender 插件测试
+tools/                生成示例场景/Blender 文件、模拟调试服务、打包插件
+tests/                冒烟/真实设备/覆盖包/PWM/标尺/交互/Blender 测试
 docs/spec/            virtual.json / device.json / virtual.gd / 自定义虚拟包
 ```
 
@@ -80,7 +87,8 @@ docs/spec/            virtual.json / device.json / virtual.gd / 自定义虚拟�
 2. `virtual/virtual.glb` 运行时用 `GLTFDocument` 从绝对路径加载（用户项目不是 `res://`）。
 3. 每个网格节点生成独立 `StaticBody3D + PhysicsMaterial`，摩擦来自 `device.json`
    （设备）、`virtual.json`（场景/实例覆盖），实现“按物体分摩擦”。
-4. 解析 `virtual.json.devices[].package` → 设备包 `debug/device.json`、`virtual.gd`。
+4. 解析 `virtual.json.devices[].package` → 设备包 `debug/device.json`、`virtual.gd`；
+   有 `override` 时优先使用自定义虚拟包。
 5. 轮询 `GET /debugger` 检测会话；开始后连 `GET /outputs/stream`（SSE），
    按设备名把 `values` 分发给脚本；脚本 `send()/invoke()` 反向走 `POST /devices/input`。
 6. 断线 1 秒后自动重连，会话结束自动复位脚本。
@@ -89,58 +97,44 @@ docs/spec/            virtual.json / device.json / virtual.gd / 自定义虚拟�
 [virtual.json](docs/spec/virtual-json.md)、[device.json](docs/spec/device-json.md)、
 [virtual.gd](docs/spec/virtual-gd.md)、[自定义虚拟包](docs/spec/custom-virtual-pack.md)。
 
-## 真实设备包
+## 设备包
 
-设备虚拟资产**直接安装在设备包里**，不在本仓库留副本：
+设备虚拟资产直接安装在设备包里：
 
 ```
 ~/.hpm/packages/gpio-*-1.0.0/debug/
-  debug.c        # LED 输出插件（已有）
+  debug.c        # LED 输出插件
   device.json    # 按物体摩擦/通道
-  device.gltf    # 5mm LED 模型
+  device.gltf    # LED 模型（buffer base64 内嵌，无 .bin）
   virtual.gd     # power -> 发光
 ~/.hpm/packages/pwm-stc90c51-1.0.0/debug/
-  debug.c        # 新增：PWM 脉宽 -> 舵机角度
+  debug.c        # PWM 脉宽 -> 舵机角度
   device.json
-  device.gltf    # SG90 风格舵机
+  device.gltf    # SG90 风格舵机（buffer base64 内嵌，无 .bin）
   virtual.gd     # angle -> 摆臂旋转
 ```
 
-重新生成模型到已安装的设备包：
+重新生成设备模型：
 
 ```bash
 godot --headless --path . --script res://tools/build_device_assets.gd
 ```
 
-`debug.c` 会被 `hpm debug` 按包自动编译成插件；PWM 插件把引脚高电平占空比
-（5%–10%）映射到 0–180°，虚拟舵机通过 `/outputs/stream` 的 `angle` 通道转动。
+HPM 设备包内不允许二进制文件，因此 `device.gltf` 使用 base64 内嵌 buffer，
+不会再生成 `device0.bin`。
 
-## Blink 完整示例
-
-`examples/blink` 是端到端最小工程：
+示例场景和 Blender 文件由脚本生成：
 
 ```bash
-cd examples/blink
-hpm sync --offline
-hpm build
-./run.sh          # CLI 模拟器里验证闪烁
+godot --headless --path . --script res://tools/build_example_scenes.gd
+blender --background --factory-startup --python tools/build_example_blends.py
 ```
-
-在 Godot 里看效果：hpm-gui 打开 `examples/blink` 并启动调试，然后：
-
-```bash
-godot --path . -- --project=examples/blink
-```
-
-详见 [examples/blink/README.md](examples/blink/README.md)。
 
 ## Blender 插件
 
 ```bash
-# 打包成可安装 zip
-tools/package_blender_addon.sh
-# 无头测试
-tests/run_blender_addon_test.sh
+tools/package_blender_addon.sh     # 生成 dist/hpm_virtual-*.zip
+tests/run_blender_addon_test.sh    # 无头测试
 ```
 
 安装后在 3D 视图侧栏 `HPM`：
@@ -153,6 +147,7 @@ tests/run_blender_addon_test.sh
 5. 导出 `virtual/virtual.glb + virtual.json`，自定义包自动复制到项目的
    `virtual/packages/`。
 
+自定义包可放在 `~/.hpm/virtual/` 或 `<项目>/virtual/packages/`。
 详见 [blender_addon/README.md](blender_addon/README.md) 与
 [自定义虚拟包规范](docs/spec/custom-virtual-pack.md)。
 
@@ -160,10 +155,10 @@ tests/run_blender_addon_test.sh
 
 已完成：欢迎页/最近项目、GLB 加载、按物体摩擦、包解析、外部脚本缓存加载、
 调试会话探测、SSE 输出流与重连、输入写回、gpio/pwm 真实设备包、
-PWM 调试插件、Blender 插件（模型列表/拖入/摩擦/自定义包/导出）、
-自定义包运行时覆盖、Blink 完整固件工程、真实设备演示工程与测试。
+PWM 调试插件、Blender 插件、自定义包运行时覆盖、两个完整示例工程、
+相机控制、选择/标尺工具、场景读取与外部脚本标尺 API、Logo 启动画面。
 
-未完成：HUD 通道控件与 3D 点击输入、骨骼动画碰撞、正式打包发布、
+未完成：HUD 通道控件、骨骼动画碰撞、正式打包发布、
 原生 Asset Browser 拖拽（当前用“拖入场景”模态放置代替）。
 
 ## 设备包约定
@@ -180,3 +175,8 @@ PWM 调试插件、Blender 插件（模型列表/拖入/摩擦/自定义包/导�
 
 安装位置：`~/.hpm/packages`；开发时也支持 `$HPM_PACKAGES_DIR` 和项目内
 `packages/`、`.hpm/packages/`。
+
+## License
+
+本项目使用 GNU General Public License v2.0 或更高版本（GPL-2.0-or-later），
+见 [LICENSE](LICENSE)。

@@ -130,7 +130,7 @@ Blender 导出时把选中的包复制到 `<项目>/virtual/packages/<name>-<ver
 ## 8. 示例
 
 ```text
-examples/real-project/virtual/packages/
+examples/project2/virtual/packages/
   metal-servo-1.0.0/
     manifest.json
     device.json

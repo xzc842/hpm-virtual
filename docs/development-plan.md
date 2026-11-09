@@ -23,15 +23,18 @@ res://
   core/sse_parser.gd        # text/event-stream 解析
   sdk/virtual_device.gd     # 外部脚本基类
   blender_addon/hpm_virtual/# Blender 插件：模型列表/拖入/摩擦/自定义包/导出
-  examples/demo-project/    # 内嵌演示设备包，不依赖 ~/.hpm
-  examples/real-project/    # 真实 gpio/pwm 设备包 + 虚拟场景
-  examples/blink/           # 完整固件工程：stc90c51 + gpio LED 闪烁
-  tools/build_demo_assets.gd   # 生成演示 GLB/glTF
+  tests/fixtures/demo-project/    # 内嵌演示设备包，不依赖 ~/.hpm
+  examples/project1/    # 舵机 + 双 LED + 固件 + virtual.blend
+  examples/project2/    # project1 + clickable-led 自定义包
+  tools/build_example_scenes.gd # 生成示例 virtual.glb / 自定义包模型
+  tools/build_example_blends.py # 生成两个 virtual.blend
+  tools/build_demo_assets.gd   # 生成测试 fixture GLB/glTF
   tools/build_device_assets.gd # 直接生成模型到已安装设备包
   tools/mock_debug_service.py  # 模拟 hpm-gui 调试服务
   tests/smoke_test.gd          # 55 项无头检查
-  tests/real_packages_test.gd  # 18 项真实设备包检查
+  tests/real_packages_test.gd  # 17 项真实设备包检查
   tests/override_test.gd       # 9 项自定义虚拟包解析检查
+  tests/project2_test.gd       # 10 项 project2 覆盖/交互检查
   tests/ruler_input_test.tscn  # 标尺射线取点/右键删除
   tests/interaction_test.tscn  # 交互注册/悬停高亮/触发
   tests/blender_addon_test.py  # Blender 无头端到端测试
@@ -45,12 +48,9 @@ res://
 godot --path .
 # 无头测试
 godot --headless --path . --script res://tests/smoke_test.gd
-# 直接打开演示项目（-- 之后是用户参数）
-godot --path . -- --project=examples/demo-project
-# 真实设备包工程
-godot --path . -- --project=examples/real-project
-# Blink 完整工程（先用 hpm build，见 examples/blink/README.md）
-godot --path . -- --project=examples/blink
+# 示例工程（-- 之后是用户参数；先按 examples/README.md 构建固件）
+godot --path . -- --project=examples/project1
+godot --path . -- --project=examples/project2
 # 测试
 godot --headless --path . --script res://tests/smoke_test.gd
 godot --headless --path . --script res://tests/real_packages_test.gd
@@ -109,13 +109,14 @@ virtual/virtual.glb ───────────────┘
 - [x] 真实设备包：gpio(LED) 与 pwm(舵机) 的 `device.json`、`device.gltf`、`virtual.gd` 安装进包。
 - [x] pwm 的 `debug.c`：监听 PWM 引脚，高电平占空比 5%–10% 映射到 0–180°。
 - [x] 模型节点按设备类型加前缀（`LedBody`、`ServoHorn`），避免 GLB 内重名重命名。
-- [x] 真实设备工程、18 项包测试、PWM 插件单元测试、截图验证。
+- [x] 两个示例工程、17 项包测试、PWM 插件单元测试、截图验证。
 - [x] 自定义虚拟包运行时解析（`override` 字符串/对象/路径、项目内 `virtual/packages`）。
 - [x] Blender 插件：模型列表、模态拖入、“编辑”弹窗（开关 + 文件夹路径）、按物体摩擦、导出。
 - [x] 自定义包只影响新拖入的实例；场景里已有实例保持各自的 `hpm_override`。
 - [x] 导出时复制覆盖包、缺 manifest 自动生成、GLB 节点与 `virtual.json` 对齐。
-- [x] Blink 完整工程：`project.toml/json`、`main.c`、`debug.toml`、`run.sh`、虚拟场景；
-  `hpm sync/build` 通过，模拟器输出 `power=on/off`。
+- [x] 示例 project1/project2：舵机 + 双 LED 固件，`hpm sync/build` 通过；
+  project2 通过 `override` 把 led2 换成可点击的自定义虚拟包。
+- [x] 每个示例都有可打开的 `virtual/virtual.blend`（设备元数据/摩擦/相机已写入）。
 - [x] 相机 WASD/QE/方向键控制 + 状态栏提示。
 - [x] 选择/标尺工具栏、射线高亮与交互触发、透明蓝色标尺（m/cm 自适应、多条、右键删除）。
 - [x] 外部脚本 API：`register_interaction()`、`draw_ruler()`、`get_scene_root()`。
@@ -132,17 +133,18 @@ virtual/virtual.glb ───────────────┘
 ## 6. 验证
 
 - 无头冒烟：55 项（SSE 分块/CRLF、项目解析、包解析、GLB、摩擦数值、脚本加载与发光）。
-- 真实设备包：18 项（包解析、模型节点、13 个碰撞体、舵机摆臂摩擦/旋转、LED 颜色与发光、实例级物理覆盖）。
+- 真实设备包：17 项（project1 场景、19 个碰撞体、双 LED、舵机、实例级物理覆盖）。
 - PWM 插件：8 项（ABI、初始 90°、1ms→0°、1.5ms→90°、2ms→180°）。
 - 自定义包解析：9 项（按名/路径、device.json/脚本覆盖、缺失回退）。
+- project2：10 项（覆盖脚本/device.json、注册交互、点击变蓝）。
 - 交互：注册/提示/触发/悬停高亮/射线命中设备。
 - 标尺：射线取两点、单位自适应、右键命中删除。
 - Blender 插件：加载真实工程 → 放置 LED/舵机 → 编辑摩擦 → 覆盖模型 → 导出 →
   自动生成 manifest；导出工程再由 Godot 打开，日志出现 `OVERRIDE LED BOUND`。
 - 端到端：[tools/mock_debug_service.py](../tools/mock_debug_service.py) 同时推送 LED 与舵机值，
-  截图见 [real-devices.png](images/real-devices.png)。
-- Blink 固件：`hpm sync --offline && hpm build` 成功；`hpm debug --json --run` 连续输出
-  `power=on/off`。
+  截图见 [project1.png](images/project1.png)。
+- 示例固件：`hpm sync --offline && hpm build` 成功；`hpm debug --json --run` 输出
+  led1/led2 的 `power` 与 servo 的 `angle` 变化。
 - 待补：真实 hpm-gui 会话的自动化断言、输入 POST 的自动化断言。
 
 ## 7. 已知限制

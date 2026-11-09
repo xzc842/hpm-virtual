@@ -1,3 +1,19 @@
+# Copyright (C) 2026 XueZicheng <xuezicheng842@outlook.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 """在 Blender 场景中放置设备、维护物体级摩擦参数。"""
 
 from __future__ import annotations
@@ -21,8 +37,52 @@ def active_collection(context) -> bpy.types.Collection:
     return context.collection if context else bpy.context.scene.collection
 
 
+def get_prop(obj, name: str, default=""):
+    """IDProperty 优先（兼容旧版本），否则读 RNA 属性。"""
+    try:
+        if name in obj.keys():
+            return obj[name]
+    except (AttributeError, TypeError):
+        pass
+    return getattr(obj, name, default)
+
+
+def find_object(name: str):
+    return bpy.data.objects.get(name)
+
+
+def migrate_legacy_props() -> None:
+    """把旧版本用 obj["hpm_*"]/scene["hpm_*"] 存的数据迁移到 RNA 属性。"""
+    object_props = (
+        "hpm_device", "hpm_props", "hpm_override", "hpm_friction", "hpm_rough",
+        "hpm_bounce", "hpm_physics_enabled", "hpm_physics_owner",
+    )
+    for obj in bpy.data.objects:
+        keys = obj.keys()
+        for prop in object_props:
+            if prop in keys:
+                try:
+                    setattr(obj, prop, obj[prop])
+                    del obj[prop]
+                except (TypeError, ValueError):
+                    pass
+    scene_props = (
+        "hpm_project_path", "hpm_mcu", "hpm_device_entries", "hpm_model_settings",
+        "hpm_custom_packs", "hpm_last_export",
+    )
+    for scene in bpy.data.scenes:
+        keys = scene.keys()
+        for prop in scene_props:
+            if prop in keys:
+                try:
+                    setattr(scene, prop, scene[prop])
+                    del scene[prop]
+                except (TypeError, ValueError):
+                    pass
+
+
 def parse_device(obj: bpy.types.Object) -> dict[str, Any]:
-    raw = getattr(obj, "hpm_device", "")
+    raw = get_prop(obj, "hpm_device", "")
     if not raw:
         return {}
     try:
@@ -33,7 +93,7 @@ def parse_device(obj: bpy.types.Object) -> dict[str, Any]:
 
 
 def device_roots() -> list[bpy.types.Object]:
-    return [obj for obj in bpy.data.objects if getattr(obj, "hpm_device", "")]
+    return [obj for obj in bpy.data.objects if get_prop(obj, "hpm_device", "")]
 
 
 def find_device_root(name: str) -> bpy.types.Object | None:

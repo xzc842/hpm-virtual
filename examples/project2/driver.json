@@ -1,0 +1,25 @@
+{
+  "intermediate_devices": {},
+  "user_devices": {
+    "led1": {
+      "driver": "gpio-*",
+      "pin": "P1_1",
+      "version": "1.0.0"
+    },
+    "led2": {
+      "driver": "gpio-*",
+      "pin": "P1_2",
+      "version": "1.0.0"
+    },
+    "servo": {
+      "config": {
+        "clock_mode": "12",
+        "freq_hz": "50",
+        "osc_hz": "11059200"
+      },
+      "driver": "pwm-stc90c51",
+      "pin": "P1_0",
+      "version": "1.0.0"
+    }
+  }
+}

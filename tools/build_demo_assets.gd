@@ -1,9 +1,27 @@
+# Copyright (C) 2026 XueZicheng <xuezicheng842@outlook.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 # 生成演示用 GLB/glTF 资产（不依赖 Blender）。
 # 用法：
 #   Godot_v4.7 --headless --path . --script res://tools/build_demo_assets.gd
 extends SceneTree
 
-const PROJECT_DIR := "res://examples/demo-project"
+const GltfEmbed := preload("res://tools/gltf_embed.gd")
+
+const PROJECT_DIR := "res://tests/fixtures/demo-project"
 
 func _init() -> void:
 	var virtual_scene := _build_virtual_scene()
@@ -104,6 +122,8 @@ func _export(root: Node3D, path: String) -> bool:
 		return false
 	var write_err := doc.write_to_filesystem(state, absolute)
 	root.free()
+	if write_err == OK and absolute.ends_with(".gltf"):
+		GltfEmbed.embed(absolute)
 	if write_err != OK:
 		push_error("写出失败 %s：%s" % [absolute, error_string(write_err)])
 		return false

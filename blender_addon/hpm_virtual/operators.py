@@ -1,3 +1,19 @@
+# Copyright (C) 2026 XueZicheng <xuezicheng842@outlook.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 """Blender 操作符：加载项目、拖入设备、编辑模型设置、导出。"""
 
 from __future__ import annotations
@@ -18,16 +34,38 @@ class HPM_OT_load_project(bpy.types.Operator):
     bl_description = "读取 project.json、设备包和自定义虚拟包"
 
     def execute(self, context):
-        path = str(context.scene.hpm_project_path).strip()
+        scene.migrate_legacy_props()
+        path = state.get_project_path(context).strip()
         if not path:
             self.report({"ERROR"}, "请先选择项目目录")
             return {"CANCELLED"}
+
+        auto_opened = False
+        blend_path = os.path.join(path, "virtual", "virtual.blend")
+        if os.path.isfile(blend_path) and not _same_file(bpy.data.filepath, blend_path):
+            try:
+                bpy.ops.wm.open_mainfile(filepath=blend_path)
+            except RuntimeError as exc:
+                self.report({"ERROR"}, f"打开 {blend_path} 失败：{exc}")
+                return {"CANCELLED"}
+            auto_opened = True
+            context = bpy.context
+            scene.migrate_legacy_props()
+            if not context.scene.hpm_project_path:
+                context.scene.hpm_project_path = path
+
+        overrides = {}
+        for name, setting in state.get_model_settings(context).items():
+            if setting.get("use_custom_pack") and setting.get("custom_pack_path"):
+                overrides[name] = {"path": setting["custom_pack_path"]}
         try:
-            project = data.load_project(path)
+            project = data.load_project(path, overrides)
         except ValueError as exc:
             self.report({"ERROR"}, str(exc))
             return {"CANCELLED"}
         state.store_project(context, project)
+        if not auto_opened and not scene.device_roots():
+            _import_project_models(context, path, project)
         errors = [entry["name"] for entry in project["devices"] if entry.get("error")]
         if errors:
             self.report({"WARNING"}, "部分设备有问题：" + ", ".join(errors))
@@ -41,6 +79,7 @@ class HPM_OT_refresh_project(bpy.types.Operator):
     bl_description = "重新扫描设备包和自定义虚拟包，保留已放置对象"
 
     def execute(self, context):
+        scene.migrate_legacy_props()
         return bpy.ops.hpm_virtual.load_project()
 
 
@@ -223,3 +262,41 @@ class HPM_OT_export_project(bpy.types.Operator):
             self.report({"WARNING"}, warning)
         self.report({"INFO"}, f"已导出 {len(result['devices'])} 个设备：{result['glb']}")
         return {"FINISHED"}
+
+
+def _import_project_models(context, project_dir: str, project: dict) -> None:
+    glb_path = os.path.join(project_dir, "virtual", "virtual.glb")
+    if not os.path.isfile(glb_path):
+        return
+    virtual = data.read_json(os.path.join(project_dir, "virtual", "virtual.json"))
+    instances = {item.get("name"): item for item in virtual.get("devices", [])}
+    bpy.ops.import_scene.gltf(filepath=glb_path)
+    for entry in project.get("devices", []):
+        name = entry["name"]
+        root = scene.find_object(name)
+        if root is None:
+            continue
+        inst = instances.get(name, {})
+        root.hpm_device = json.dumps({
+            "name": name,
+            "driver": entry.get("driver", ""),
+            "package": entry.get("package", ""),
+            "version": entry.get("version", ""),
+        }, ensure_ascii=False)
+        root.hpm_props = json.dumps(inst.get("props", {}), ensure_ascii=False)
+        override = entry.get("override") or {}
+        if override:
+            root.hpm_override = json.dumps({
+                "name": override.get("name", ""),
+                "version": override.get("version", ""),
+                "path": override.get("path", ""),
+            }, ensure_ascii=False)
+        base = entry.get("device_json", {})
+        merged_objects = list(inst.get("objects", [])) + list(base.get("objects", []))
+        merged_physics = dict(base.get("physics", {}))
+        merged_physics.update(inst.get("physics", {}))
+        scene.apply_device_physics(root, {"physics": merged_physics, "objects": merged_objects})
+
+
+def _same_file(a: str, b: str) -> bool:
+    return bool(a) and bool(b) and os.path.abspath(a) == os.path.abspath(b)

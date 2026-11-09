@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "scene": "virtual.glb",
+  "physics": { "friction": 0.8, "rough": true },
+  "objects": [
+    { "node": "Environment/Floor", "physics": { "friction": 0.9, "rough": true } }
+  ],
+  "devices": [
+    {
+      "name": "led1",
+      "title": "LED 1",
+      "node": "Devices/led1",
+      "package": "gpio",
+      "version": "1.0.0",
+      "props": { "color": "red" }
+    },
+    {
+      "name": "led2",
+      "title": "LED 2",
+      "node": "Devices/led2",
+      "package": "gpio",
+      "version": "1.0.0",
+      "props": { "color": "green" },
+      "objects": [
+        { "node": "Body", "physics": { "friction": 0.35, "rough": true, "bounce": 0.2 } },
+        { "node": "Base2", "physics": { "friction": 0.65, "rough": true } },
+        { "node": "Anode2", "physics": { "friction": 0.75, "rough": true } },
+        { "node": "Cathode2", "physics": { "friction": 0.75, "rough": true } }
+      ]
+    },
+    {
+      "name": "servo",
+      "title": "舵机",
+      "node": "Devices/servo",
+      "package": "pwm",
+      "version": "1.0.0",
+      "props": { "speed_deg_per_s": 240 }
+    }
+  ]
+}

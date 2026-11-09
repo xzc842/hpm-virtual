@@ -1,0 +1,7 @@
+{
+  "type": "hpm-virtual-pack",
+  "name": "clickable-led",
+  "version": "1.0.0",
+  "target": "gpio",
+  "description": "可点击切换红/蓝颜色的 LED"
+}

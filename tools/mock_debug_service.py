@@ -1,4 +1,20 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 XueZicheng <xuezicheng842@outlook.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 """Minimal hpm-gui debug service mock for hpm-virtual end-to-end checks.
 
 Usage:
@@ -43,12 +59,16 @@ def build_devices():
             pass
     devices = []
     for name in names:
-        template = templates.get(name, {
-            "driver": "",
-            "config": {},
-            "title": name,
-            "values": {},
-        })
+        if name.startswith("led"):
+            template = dict(templates["led"])
+            template["title"] = name.upper()
+        else:
+            template = templates.get(name, {
+                "driver": "",
+                "config": {},
+                "title": name,
+                "values": {},
+            })
         devices.append({
             "name": name,
             "device": name,
@@ -136,27 +156,40 @@ class Handler(BaseHTTPRequestHandler):
         self._chunk(f"event: snapshot\ndata: {json.dumps(snapshot)}\n\n")
 
         cursor = 0
+        led_names = [name for name in states if name.startswith("led")]
         time.sleep(0.6)
-        if "led" in states:
-            states["led"]["power"] = True
+        for name in led_names:
+            states[name]["power"] = True
             cursor += 1
-            self._event(cursor, "led", dict(states["led"]))
+            self._event(cursor, name, dict(states[name]))
         if "servo" in states:
-            states["servo"].update({"angle": 150.0, "duty_pct": 9.17})
+            states["servo"].update({"angle": 90.0, "duty_pct": 7.5})
             cursor += 1
             self._event(cursor, "servo", dict(states["servo"]))
 
         deadline = time.time() + STREAM_LIFE
         next_blink = time.time() + 0.5
+        next_servo = time.time() + 1.5
         next_ping = time.time() + 0.5
+        angles = [0.0, 90.0, 180.0]
+        angle_index = 0
         while time.time() < deadline:
             time.sleep(0.1)
             now = time.time()
-            if "led" in states and now >= next_blink:
-                states["led"]["power"] = not states["led"]["power"]
-                cursor += 1
-                self._event(cursor, "led", dict(states["led"]))
+            if led_names and now >= next_blink:
+                for name in led_names:
+                    states[name]["power"] = not states[name]["power"]
+                    cursor += 1
+                    self._event(cursor, name, dict(states[name]))
                 next_blink = now + 0.5
+            if "servo" in states and now >= next_servo:
+                angle = angles[angle_index % len(angles)]
+                angle_index += 1
+                duty = 5.0 + angle / 180.0 * 5.0
+                states["servo"].update({"angle": angle, "duty_pct": duty})
+                cursor += 1
+                self._event(cursor, "servo", dict(states["servo"]))
+                next_servo = now + 1.5
             if now >= next_ping:
                 self._chunk(": ping\n\n")
                 next_ping = now + 0.5

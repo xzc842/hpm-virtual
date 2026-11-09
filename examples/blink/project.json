@@ -1,9 +1,0 @@
-{
-  "devices": {
-    "led": {
-      "driver": "gpio",
-      "pin": "P1_0"
-    }
-  },
-  "mcu": "stc90c51"
-}

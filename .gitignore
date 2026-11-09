@@ -13,3 +13,12 @@ __pycache__/
 
 # 打包产物
 /dist/
+
+# 示例里的 GLB/GLTF 由运行时加载，不需要 Godot 导入边车
+/examples/**/*.import
+/examples/**/*.uid
+/tests/fixtures/**/*.import
+/tests/fixtures/**/*.uid
+
+# Blender 备份
+/examples/**/*.blend1

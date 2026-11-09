@@ -1,0 +1,22 @@
+{
+  "devices": {
+    "led1": {
+      "driver": "gpio",
+      "pin": "P1_1"
+    },
+    "led2": {
+      "driver": "gpio",
+      "pin": "P1_2"
+    },
+    "servo": {
+      "config": {
+        "clock_mode": "12",
+        "freq_hz": "50",
+        "osc_hz": "11059200"
+      },
+      "driver": "pwm",
+      "pin": "P1_0"
+    }
+  },
+  "mcu": "stc90c51"
+}

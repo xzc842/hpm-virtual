@@ -57,11 +57,16 @@ Blender 插件用它加载模型并摆放；Godot 运行时用它加载外部脚
   manifest.json
   debug/
     device.json
-    device.gltf        # 可能带 .bin 边车文件
+    device.gltf        # 纯文本，buffer 以 base64 内嵌
     virtual.gd
 ```
 
 `script` / `model` 也可以写带目录的路径（相对包根），例如 `debug/virtual.gd`。
+
+包内不允许二进制文件，`device.gltf` 的 buffer 必须用 base64 内嵌
+（`uri` 为 `data:application/octet-stream;base64,...`），不要使用外部 `.bin`。
+工具 [tools/gltf_embed.gd](../tools/gltf_embed.gd) / [tools/embed_gltf_buffers.py](../tools/embed_gltf_buffers.py)
+可以自动完成转换。
 
 ## 包解析
 
