@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "scene": "virtual.glb",
+  "physics": { "friction": 0.75, "rough": true },
+  "objects": [
+    { "node": "Environment/Floor", "physics": { "friction": 0.9, "rough": true } }
+  ],
+  "devices": [
+    {
+      "name": "led",
+      "title": "演示 LED",
+      "node": "Devices/led",
+      "package": "led-demo",
+      "version": "1.0.0",
+      "props": { "color": "green" }
+    }
+  ],
+  "environment": { "gravity": -9.81 }
+}

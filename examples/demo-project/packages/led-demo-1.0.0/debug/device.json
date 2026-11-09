@@ -1,0 +1,15 @@
+{
+  "name": "led",
+  "display_name": "演示 LED",
+  "version": "1.0.0",
+  "model": "device.gltf",
+  "script": "virtual.gd",
+  "physics": { "friction": 0.6, "rough": true, "bounce": 0.05 },
+  "objects": [
+    { "node": "Body", "physics": { "friction": 0.6, "rough": true } },
+    { "node": "Lamp", "physics": { "friction": 0.3, "bounce": 0.2 } }
+  ],
+  "channels": {
+    "power": { "title": "电源", "type": "bool", "widget": "checkbox" }
+  }
+}

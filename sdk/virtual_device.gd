@@ -1,0 +1,123 @@
+# 虚拟设备脚本基类。
+#
+# 设备包里的 debug/virtual.gd 以如下方式继承：
+#   extends "res://sdk/virtual_device.gd"
+#
+# 主程序负责：加载模型、把包脚本实例挂到设备节点下、在调试会话开始时
+# 把 /outputs/stream 里属于该设备的 values 转发给 _on_values()。
+# 脚本只操作 3D 节点和调用 send()/invoke()，不要自己发起 HTTP 请求。
+class_name VirtualDevice
+extends Node
+
+## 设备实例名，对应 project.json 里 devices 的 key。
+var device_name := ""
+## 显示名，来自 device.json 或调试服务。
+var device_title := ""
+## 设备包名 / 版本。
+var package_name := ""
+var package_version := ""
+## 该设备在 virtual.glb 里的模型根节点。
+var model: Node3D = null
+## virtual.json 里该实例的 props。
+var props: Dictionary = {}
+## 调试会话是否正在运行。
+var active := false
+## 最近一次收到的输出通道值。
+var values: Dictionary = {}
+
+var _bridge: Node = null
+
+# ---------------------------------------------------------------- 供脚本使用
+
+## 写输入设备通道（POST /devices/input）。
+func send(channel: String, value: Variant) -> void:
+	if _bridge != null:
+		_bridge.send_input(device_name, channel, value)
+
+## 触发按钮/动作通道。
+func invoke(channel: String) -> void:
+	if _bridge != null:
+		_bridge.invoke_input(device_name, channel)
+
+## 读取最近一次输出值。
+func get_value(channel: String, default_value: Variant = null) -> Variant:
+	return values.get(channel, default_value)
+
+## 取模型根节点下的节点。path 为空时返回模型根节点。
+func get_model_node(path: String = "") -> Node:
+	if model == null:
+		return null
+	if path.is_empty():
+		return model
+	var node := model.get_node_or_null(path)
+	if node != null:
+		return node
+	return model.find_child(path.get_file(), true, false)
+
+func log_info(message: String) -> void:
+	print("[virtual:", device_name, "] ", message)
+
+func log_warn(message: String) -> void:
+	push_warning("[virtual:%s] %s" % [device_name, message])
+
+func log_error(message: String) -> void:
+	push_error("[virtual:%s] %s" % [device_name, message])
+
+# ---------------------------------------------------------------- 生命周期
+
+## 绑定完成时调用，ctx 包含 name/title/package/version/node_path/props/device。
+func _on_bind(_ctx: Dictionary) -> void:
+	pass
+
+## 调试会话开始（长连接建立前）。
+func _on_session_start() -> void:
+	pass
+
+## 收到该设备的输出通道值（服务端只在值变化时推送）。
+func _on_values(_new_values: Dictionary) -> void:
+	pass
+
+## 调试会话结束。
+func _on_session_stop() -> void:
+	pass
+
+## 每帧调用；需要模拟动画时覆写它。
+func _on_tick(_delta: float) -> void:
+	pass
+
+## 节点释放前调用。
+func _on_unbind() -> void:
+	pass
+
+# ---------------------------------------------------------------- 主程序内部
+
+func _host_bind(bridge: Node, ctx: Dictionary) -> void:
+	_bridge = bridge
+	device_name = String(ctx.get("name", device_name))
+	device_title = String(ctx.get("title", device_title))
+	package_name = String(ctx.get("package", package_name))
+	package_version = String(ctx.get("version", package_version))
+	model = ctx.get("model", model)
+	props = ctx.get("props", {})
+	set_process(true)
+	_on_bind(ctx)
+
+func _host_session_start() -> void:
+	active = true
+	_on_session_start()
+
+func _host_values(new_values: Dictionary) -> void:
+	values = new_values.duplicate(true)
+	_on_values(values)
+
+func _host_session_stop() -> void:
+	active = false
+	values.clear()
+	_on_session_stop()
+
+func _host_unbind() -> void:
+	_on_unbind()
+
+func _process(delta: float) -> void:
+	if model != null:
+		_on_tick(delta)

@@ -1,0 +1,9 @@
+{
+  "name": "led-demo",
+  "version": "1.0.0",
+  "chip": "ch552g",
+  "description": "hpm-virtual 演示设备：单色 LED",
+  "license": "MIT",
+  "toolchain": ["sdcc"],
+  "config": {}
+}
