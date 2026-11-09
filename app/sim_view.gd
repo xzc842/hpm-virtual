@@ -3,11 +3,18 @@ class_name SimView
 extends Node3D
 
 signal binding_report(report: Dictionary)
+signal interaction_hover_changed(device_name: String, hint: String)
+signal interaction_triggered(device_name: String)
+signal tool_changed(tool: String)
+signal ruler_count_changed(count: int)
 
 const DEVICE_DEFAULT_FRICTION := 0.8
 const ENV_DEFAULT_FRICTION := 0.8
+const CAMERA_MOVE_SPEED := 2.5
+const CAMERA_ROTATE_SPEED := 90.0
 
 var project_dir := ""
+var current_tool := "select"
 
 var _resolver: PackageResolver
 var _scene_root: Node3D
@@ -25,6 +32,15 @@ var _report: Dictionary = {
 var _camera: Camera3D
 var _bridge_connected := false
 
+var _ruler_tool: RulerTool
+var _node_to_device_name: Dictionary = {}
+var _hovered_name := ""
+var _hovered_root: Node3D
+var _hovered_overlays: Dictionary = {}
+var _highlight_material: StandardMaterial3D
+var _camera_yaw := 0.0
+var _camera_pitch := 0.0
+
 func setup(info: Dictionary) -> void:
 	project_dir = String(info.get("root", ""))
 	_resolver = PackageResolver.new(project_dir)
@@ -40,12 +56,22 @@ func setup(info: Dictionary) -> void:
 		_report["placeholder"] = true
 	add_child(_scene_root)
 
+	_ruler_tool = RulerTool.new()
+	_ruler_tool.name = "RulerTool"
+	add_child(_ruler_tool)
+	_ruler_tool.setup(_camera)
+	_ruler_tool.ruler_count_changed.connect(func(count: int) -> void:
+		ruler_count_changed.emit(count)
+	)
+
 	_apply_environment_physics(virtual)
 	_bind_devices(virtual)
 	_frame_camera()
+	_build_highlight_material()
 	_connect_bridge()
 	binding_report.emit(_report)
 	_sync_session_state()
+	set_tool("select")
 
 func get_report() -> Dictionary:
 	return _report
@@ -150,6 +176,7 @@ func _bind_device(instance: Dictionary) -> void:
 		_report["overrides"].append(device_name)
 
 	_device_nodes[device_name] = node
+	_node_to_device_name[node] = device_name
 
 	var script_path := String(resolved.get("script_path", ""))
 	if not FileAccess.file_exists(script_path):
@@ -178,6 +205,8 @@ func _bind_device(instance: Dictionary) -> void:
 		"props": instance.get("props", {}),
 		"device": App.project_json.get("devices", {}).get(device_name, {}),
 		"model": node,
+		"scene_root": _scene_root,
+		"sim": self,
 	}
 	(instance_node as VirtualDevice)._host_bind(Bridge, ctx)
 	_device_scripts[device_name] = instance_node
@@ -254,7 +283,10 @@ func _frame_camera() -> void:
 	var radius := maxf(box.size.length() * 0.5, 0.22)
 	var direction := Vector3(0.85, 1.0, 0.85).normalized()
 	_camera.global_position = center + direction * radius * 4.0
-	_camera.look_at(center, Vector3.UP)
+	var target_direction := (center - _camera.global_position).normalized()
+	_camera_yaw = rad_to_deg(atan2(-target_direction.x, -target_direction.z))
+	_camera_pitch = rad_to_deg(asin(clampf(target_direction.y, -1.0, 1.0)))
+	_camera.rotation_degrees = Vector3(_camera_pitch, _camera_yaw, 0.0)
 
 func _compute_aabb(root: Node3D) -> AABB:
 	var box := AABB()
@@ -270,6 +302,180 @@ func _compute_aabb(root: Node3D) -> AABB:
 		else:
 			box = box.merge(mesh_box)
 	return box
+
+# ---------------------------------------------------------------- 工具 / 相机 / 交互
+
+func set_tool(tool: String) -> void:
+	current_tool = tool
+	if _ruler_tool != null:
+		_ruler_tool.set_active(tool == "ruler")
+	if tool != "select":
+		_clear_hover()
+	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+	tool_changed.emit(tool)
+
+func add_ruler(from_point: Vector3, to_point: Vector3, label_text: String = "") -> int:
+	if _ruler_tool == null:
+		return -1
+	return _ruler_tool.add_ruler(from_point, to_point, label_text)
+
+func clear_rulers() -> void:
+	if _ruler_tool != null:
+		_ruler_tool.clear_rulers()
+
+func remove_ruler(id: int) -> void:
+	if _ruler_tool != null:
+		_ruler_tool.remove_ruler(id)
+
+func get_ruler_count() -> int:
+	return _ruler_tool.get_ruler_count() if _ruler_tool != null else 0
+
+func _process(delta: float) -> void:
+	_update_camera(delta)
+	if current_tool == "select":
+		_update_hover()
+
+func _update_camera(delta: float) -> void:
+	if _camera == null:
+		return
+	var rotate := 0.0
+	if Input.is_key_pressed(KEY_LEFT):
+		rotate += 1.0
+	if Input.is_key_pressed(KEY_RIGHT):
+		rotate -= 1.0
+	_camera_yaw += rotate * CAMERA_ROTATE_SPEED * delta
+
+	var pitch := 0.0
+	if Input.is_key_pressed(KEY_UP):
+		pitch += 1.0
+	if Input.is_key_pressed(KEY_DOWN):
+		pitch -= 1.0
+	_camera_pitch = clampf(_camera_pitch + pitch * CAMERA_ROTATE_SPEED * delta, -85.0, 85.0)
+	_camera.rotation_degrees = Vector3(_camera_pitch, _camera_yaw, 0.0)
+
+	var move := Vector3.ZERO
+	var basis := Basis(Vector3.UP, deg_to_rad(_camera_yaw))
+	var forward := -basis.z
+	var right := basis.x
+	if Input.is_key_pressed(KEY_W):
+		move += forward
+	if Input.is_key_pressed(KEY_S):
+		move -= forward
+	if Input.is_key_pressed(KEY_D):
+		move += right
+	if Input.is_key_pressed(KEY_A):
+		move -= right
+	if Input.is_key_pressed(KEY_E):
+		move += Vector3.UP
+	if Input.is_key_pressed(KEY_Q):
+		move -= Vector3.UP
+	if move.length_squared() > 0.0:
+		_camera.position += move.normalized() * CAMERA_MOVE_SPEED * delta
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _ruler_tool != null and current_tool == "ruler":
+		if _mouse_over_ui():
+			return
+		if _ruler_tool.handle_input(event):
+			get_viewport().set_input_as_handled()
+		return
+
+	if current_tool != "select":
+		return
+	if event is InputEventMouseButton:
+		var mouse := event as InputEventMouseButton
+		if mouse.button_index == MOUSE_BUTTON_LEFT and mouse.pressed:
+			if _mouse_over_ui():
+				return
+			_update_hover()
+			if _hovered_name.is_empty():
+				return
+			var script: VirtualDevice = _device_scripts.get(_hovered_name, null)
+			if script != null and script.trigger_interaction():
+				interaction_triggered.emit(_hovered_name)
+				get_viewport().set_input_as_handled()
+
+func _mouse_over_ui() -> bool:
+	return get_viewport().gui_get_hovered_control() != null
+
+func _update_hover() -> void:
+	if _camera == null or _mouse_over_ui():
+		_clear_hover()
+		return
+	var hit := _raycast_mouse(get_viewport().get_mouse_position())
+	if hit.is_empty():
+		_clear_hover()
+		return
+	var device_name := _device_name_for_collider(hit.get("collider"))
+	var script: VirtualDevice = _device_scripts.get(device_name, null)
+	if script == null or not script.has_interaction():
+		_clear_hover()
+		return
+	_set_hover(device_name, script.get_interaction_hint())
+
+func _raycast_mouse(screen_position: Vector2) -> Dictionary:
+	var origin := _camera.project_ray_origin(screen_position)
+	var direction := _camera.project_ray_normal(screen_position)
+	var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * 500.0)
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	return get_world_3d().direct_space_state.intersect_ray(query)
+
+func _device_name_for_collider(collider: Object) -> String:
+	var node := collider as Node
+	while node != null:
+		if _node_to_device_name.has(node):
+			return String(_node_to_device_name[node])
+		node = node.get_parent()
+	return ""
+
+func _set_hover(device_name: String, hint: String) -> void:
+	if device_name == _hovered_name:
+		return
+	_clear_hover()
+	if device_name.is_empty():
+		return
+	var root: Node3D = _device_nodes.get(device_name, null)
+	if root == null:
+		return
+	_hovered_name = device_name
+	_hovered_root = root
+	_apply_highlight(root, true)
+	Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
+	interaction_hover_changed.emit(device_name, hint)
+
+func _clear_hover() -> void:
+	if _hovered_root != null:
+		_apply_highlight(_hovered_root, false)
+	var had_hover := not _hovered_name.is_empty()
+	_hovered_name = ""
+	_hovered_root = null
+	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+	if had_hover:
+		interaction_hover_changed.emit("", "")
+
+func _build_highlight_material() -> void:
+	_highlight_material = StandardMaterial3D.new()
+	_highlight_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_highlight_material.albedo_color = Color(0.18, 0.65, 1.0, 0.32)
+	_highlight_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_highlight_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	_highlight_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+func _apply_highlight(root: Node3D, enabled: bool) -> void:
+	var meshes := root.find_children("*", "MeshInstance3D", true, false)
+	if root is MeshInstance3D:
+		meshes.push_front(root)
+	if enabled:
+		for item in meshes:
+			var mesh := item as MeshInstance3D
+			_hovered_overlays[mesh] = mesh.material_overlay
+			mesh.material_overlay = _highlight_material
+	else:
+		for mesh: MeshInstance3D in _hovered_overlays:
+			if is_instance_valid(mesh):
+				mesh.material_overlay = _hovered_overlays[mesh]
+		_hovered_overlays.clear()
 
 func _exit_tree() -> void:
 	for script: VirtualDevice in _device_scripts.values():

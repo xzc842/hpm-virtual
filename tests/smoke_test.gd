@@ -11,6 +11,7 @@ func _init() -> void:
 	_test_package_resolver()
 	_test_model_and_physics()
 	_test_external_script()
+	_test_interaction_and_ruler()
 	_test_debug_url()
 
 	print("SMOKE: %d checks, %d failure(s)" % [_checks, _failures])
@@ -195,6 +196,34 @@ func _test_external_script() -> void:
 	instance._host_unbind()
 	instance.free()
 	model.free()
+
+func _test_interaction_and_ruler() -> void:
+	print("[Interaction/Ruler]")
+	var ruler := RulerTool.new()
+	get_root().add_child(ruler)
+	var first := ruler.add_ruler(Vector3.ZERO, Vector3(1.5, 0.0, 0.0))
+	var second := ruler.add_ruler(Vector3.ZERO, Vector3(0.0, 0.0, 0.25))
+	_check(first > 0 and second > 0, "添加两条标尺")
+	_check(ruler.get_ruler_count() == 2, "标尺数量")
+	_check(RulerTool.format_distance(1.5) == "1.50 m", "自适应单位 m")
+	_check(RulerTool.format_distance(0.25) == "25.0 cm", "自适应单位 cm")
+	_check(ruler.remove_ruler(first), "删除标尺")
+	_check(ruler.get_ruler_count() == 1, "删除后数量")
+
+	var device := VirtualDevice.new()
+	var calls := [0]
+	device.register_interaction("test", func() -> void: calls[0] += 1, "测试交互")
+	_check(device.has_interaction(), "设备注册交互")
+	_check(device.get_interaction_hint() == "测试交互", "交互提示")
+	_check(device.trigger_interaction(), "触发交互")
+	_check(calls[0] == 1, "交互回调执行")
+	device.sim_view = ruler
+	var script_ruler := device.draw_ruler(Vector3.ZERO, Vector3(0.5, 0.0, 0.0), "脚本标尺")
+	_check(script_ruler > 0, "外部脚本画标尺")
+	_check(ruler.get_ruler_count() == 2, "脚本标尺计数")
+	device.clear_interactions()
+	device.free()
+	ruler.clear_rulers()
 
 # ---------------------------------------------------------------- 调试服务地址
 

@@ -40,7 +40,33 @@ func _on_session_start() -> void:
 | `_on_tick(delta)` | 每帧 | 做平滑动画；**不要覆写 `_process`**。 |
 | `_on_unbind()` | 场景销毁 | 释放自己创建的资源。 |
 
-`ctx` 字段：`name`、`title`、`package`、`version`、`node_path`、`props`、`device`（`project.json` 里的设备配置）、`model`（设备根节点）。
+`ctx` 字段：`name`、`title`、`package`、`version`、`node_path`、`props`、`device`（`project.json` 里的设备配置）、`model`（设备根节点）、`scene_root`（整个场景根）、`sim`（SimView）。
+
+### 交互
+
+```gdscript
+func _on_bind(_ctx: Dictionary) -> void:
+    register_interaction("toggle", _on_click, "点击切换本地高亮")
+
+func _on_click() -> void:
+    log_info("被点击了")
+```
+
+- 只有注册过交互的设备才会在“选择”模式下高亮并显示提示；没有注册则鼠标直接穿过。
+- 交互回调在点击时同步执行，不要做长时间阻塞。
+- 多个交互时点击触发第一个；可用 `trigger_interaction(id)` 指定。
+
+### 标尺与场景
+
+```gdscript
+func _on_bind(_ctx: Dictionary) -> void:
+    var root := get_scene_root()          # 整个 virtual.glb 场景
+    var floor := get_scene_node("Environment/Floor")
+    draw_ruler(Vector3(-0.2, 0, 0), Vector3(0.2, 0, 0), "宽度")
+```
+
+- 坐标是世界坐标；标尺默认透明蓝色，单位在 m/cm 之间自动切换。
+- 标尺不受设备生命周期限制；脚本退出时可用 `clear_rulers()` 清理。
 
 ## API
 
@@ -51,6 +77,13 @@ func _on_session_start() -> void:
 | `props: Dictionary` | `virtual.json` 的实例参数。 |
 | `active: bool` | 调试会话是否运行。 |
 | `values: Dictionary` | 最近一次输出值。 |
+| `register_interaction(id, callback, hint)` | 注册可点击交互；选择模式悬停高亮，左键触发。 |
+| `unregister_interaction(id)` / `clear_interactions()` | 移除交互。 |
+| `has_interaction()` / `get_interaction_hint()` | 查询是否可交互/提示文本。 |
+| `trigger_interaction(id := "")` | 主动触发交互（默认第一个）。 |
+| `get_scene_root()` / `get_scene_node(path)` | 只读访问整个虚拟场景。 |
+| `draw_ruler(from, to, label := "")` | 在世界坐标画标尺，返回 id；支持多条。 |
+| `clear_rulers()` | 清除所有标尺。 |
 | `send(channel, value)` | 写输入通道，内部 `POST /devices/input`。 |
 | `invoke(channel)` | 触发按钮/动作通道。 |
 | `get_value(channel, default)` | 读最近值。 |

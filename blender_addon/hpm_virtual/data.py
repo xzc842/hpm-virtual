@@ -53,7 +53,7 @@ def virtual_pack_roots(project_dir: str = "") -> list[str]:
             roots.append(normalize_path(part.strip()))
     home = os.environ.get("HOME", "")
     if home:
-        roots.append(os.path.join(home, ".hpm", "virtual-packages"))
+        roots.append(os.path.join(home, ".hpm", "virtual"))
     return _unique(roots)
 
 

@@ -29,9 +29,11 @@ res://
   tools/build_demo_assets.gd   # 生成演示 GLB/glTF
   tools/build_device_assets.gd # 直接生成模型到已安装设备包
   tools/mock_debug_service.py  # 模拟 hpm-gui 调试服务
-  tests/smoke_test.gd          # 43 项无头检查
+  tests/smoke_test.gd          # 55 项无头检查
   tests/real_packages_test.gd  # 18 项真实设备包检查
   tests/override_test.gd       # 9 项自定义虚拟包解析检查
+  tests/ruler_input_test.tscn  # 标尺射线取点/右键删除
+  tests/interaction_test.tscn  # 交互注册/悬停高亮/触发
   tests/blender_addon_test.py  # Blender 无头端到端测试
   tests/pwm_plugin_test.c      # pwm debug.c 单元测试
 ```
@@ -114,6 +116,10 @@ virtual/virtual.glb ───────────────┘
 - [x] 导出时复制覆盖包、缺 manifest 自动生成、GLB 节点与 `virtual.json` 对齐。
 - [x] Blink 完整工程：`project.toml/json`、`main.c`、`debug.toml`、`run.sh`、虚拟场景；
   `hpm sync/build` 通过，模拟器输出 `power=on/off`。
+- [x] 相机 WASD/QE/方向键控制 + 状态栏提示。
+- [x] 选择/标尺工具栏、射线高亮与交互触发、透明蓝色标尺（m/cm 自适应、多条、右键删除）。
+- [x] 外部脚本 API：`register_interaction()`、`draw_ruler()`、`get_scene_root()`。
+- [x] `logo.png` 启动画面与欢迎页 Logo。
 
 ## 5. 下一步（按优先级）
 
@@ -125,10 +131,12 @@ virtual/virtual.glb ───────────────┘
 
 ## 6. 验证
 
-- 无头冒烟：43 项（SSE 分块/CRLF、项目解析、包解析、GLB、摩擦数值、脚本加载与发光）。
+- 无头冒烟：55 项（SSE 分块/CRLF、项目解析、包解析、GLB、摩擦数值、脚本加载与发光）。
 - 真实设备包：18 项（包解析、模型节点、13 个碰撞体、舵机摆臂摩擦/旋转、LED 颜色与发光、实例级物理覆盖）。
 - PWM 插件：8 项（ABI、初始 90°、1ms→0°、1.5ms→90°、2ms→180°）。
 - 自定义包解析：9 项（按名/路径、device.json/脚本覆盖、缺失回退）。
+- 交互：注册/提示/触发/悬停高亮/射线命中设备。
+- 标尺：射线取两点、单位自适应、右键命中删除。
 - Blender 插件：加载真实工程 → 放置 LED/舵机 → 编辑摩擦 → 覆盖模型 → 导出 →
   自动生成 manifest；导出工程再由 Godot 打开，日志出现 `OVERRIDE LED BOUND`。
 - 端到端：[tools/mock_debug_service.py](../tools/mock_debug_service.py) 同时推送 LED 与舵机值，

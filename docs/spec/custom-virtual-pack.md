@@ -84,7 +84,7 @@ Blender 导出时把选中的包复制到 `<项目>/virtual/packages/<name>-<ver
 2. `<项目>/virtual/packages/<name>-<version>/`；
 3. `<项目>/virtual/packages/<name>/`；
 4. `$HPM_VIRTUAL_PACKAGES`（冒号分隔）；
-5. `~/.hpm/virtual-packages/<name>-<version>/`。
+5. `~/.hpm/virtual/<name>-<version>/`。
 
 ## 5. 加载优先级
 

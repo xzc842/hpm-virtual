@@ -18,7 +18,7 @@ godot --path . -- --project=examples/real-project
 # 完整闪烁工程：固件 + 虚拟场景（构建见 examples/blink/README.md）
 cd examples/blink && ./run.sh
 
-# 全部测试（Godot 43 + 18 + 9 项，PWM 8 项，Blink 固件，Blender 端到端）
+# 全部测试（Godot 55 + 18 + 9 项 + 标尺/交互动作用例，PWM 8 项，Blink 固件，Blender 端到端）
 tests/run_all.sh
 # 也可以单独跑
 godot --headless --path . --script res://tests/smoke_test.gd
@@ -27,6 +27,9 @@ godot --headless --path . --script res://tests/override_test.gd
 tests/run_pwm_plugin_test.sh
 tests/run_blender_addon_test.sh
 tests/run_blink_test.sh
+# 单独跑标尺/交互测试
+godot --headless --path . res://tests/ruler_input_test.tscn
+godot --headless --path . res://tests/interaction_test.tscn
 ```
 
 用本地模拟服务看动画：
@@ -57,6 +60,19 @@ tools/                生成 GLB、模拟调试服务、打包插件
 tests/                冒烟/真实设备/覆盖包/PWM/Blender 插件测试
 docs/spec/            virtual.json / device.json / virtual.gd / 自定义虚拟包
 ```
+
+## 操作
+
+- **WASD** 水平平移，**Q/E** 升降，**方向键** 旋转视角。
+- 左侧半透明工具栏：
+  - **选择**（V）：鼠标指向注册了交互的设备时高亮，左键触发交互。
+  - **标尺**（M）：左键第一次设起点、第二次设终点；右键删除鼠标附近的标尺。
+- 标尺是透明蓝色，自动显示 `m` / `cm`；可以同时画多条。
+- 外部脚本可通过 `register_interaction()` 注册点击交互，通过
+  `draw_ruler()` 画标尺，通过 `get_scene_root()` 读取整个场景，见
+  [virtual.gd 规范](docs/spec/virtual-gd.md)。
+
+![工具栏、相机提示与标尺](docs/images/ruler-demo.png)
 
 ## 工作方式
 

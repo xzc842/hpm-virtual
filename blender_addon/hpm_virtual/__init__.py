@@ -9,7 +9,7 @@ from . import data, exporter, operators, panels, scene, state
 bl_info = {
     "name": "HPM Virtual",
     "author": "HPM",
-    "version": (1, 0, 1),
+    "version": (1, 0, 2),
     "blender": (4, 2, 0),
     "location": "3D 视图 > 侧栏 > HPM",
     "description": "HPM 虚拟环境编辑与导出",

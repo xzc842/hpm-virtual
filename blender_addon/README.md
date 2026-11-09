@@ -9,7 +9,7 @@
 
 ```bash
 tools/package_blender_addon.sh
-# dist/hpm_virtual-1.0.1.zip
+# dist/hpm_virtual-1.0.2.zip
 ```
 
 Blender：`编辑 > 偏好设置 > 获取扩展 > 从磁盘安装`，选择该 zip，启用 “HPM Virtual”。
@@ -32,6 +32,7 @@ blender --background --factory-startup --python-expr \
    - 打开 **使用自定义虚拟包**，填写文件夹路径，保存。
    - 只影响**之后拖入**的模型；已经在场景里的实例保持原来的覆盖。
    - 关掉开关再拖入，恢复设备包默认模型。
+   也可以把可复用包放到 `~/.hpm/virtual/`，刷新项目后会在自定义包列表中出现。
 4. 自定义包文件夹内容：
    ```
    <folder>/

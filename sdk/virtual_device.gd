@@ -24,8 +24,14 @@ var props: Dictionary = {}
 var active := false
 ## 最近一次收到的输出通道值。
 var values: Dictionary = {}
+## 整个 virtual.glb 场景的根节点（只读访问）。
+var scene_root: Node3D = null
+## SimView（可读取设备节点、添加标尺等）。
+var sim_view: Node = null
 
 var _bridge: Node = null
+var _interactions: Dictionary = {}
+var _interaction_order: Array[String] = []
 
 # ---------------------------------------------------------------- 供脚本使用
 
@@ -53,6 +59,76 @@ func get_model_node(path: String = "") -> Node:
 	if node != null:
 		return node
 	return model.find_child(path.get_file(), true, false)
+
+# ---------------------------------------------------------------- 场景 / 交互 / 标尺
+
+## 注册一个可点击交互。设备在“选择”模式下悬停会高亮，左键触发。
+func register_interaction(id: String, callback: Callable, hint: String = "") -> void:
+	if not callback.is_valid():
+		log_warn("register_interaction 收到无效 Callable：%s" % id)
+		return
+	var key := id if not id.is_empty() else "default"
+	_interactions[key] = {"callback": callback, "hint": hint}
+	if not _interaction_order.has(key):
+		_interaction_order.append(key)
+
+func unregister_interaction(id: String) -> void:
+	var key := id if not id.is_empty() else "default"
+	_interactions.erase(key)
+	_interaction_order.erase(key)
+
+func clear_interactions() -> void:
+	_interactions.clear()
+	_interaction_order.clear()
+
+func has_interaction() -> bool:
+	return not _interactions.is_empty()
+
+func get_interaction_hint() -> String:
+	var hints := PackedStringArray()
+	for key: String in _interaction_order:
+		if not _interactions.has(key):
+			continue
+		var hint := String(_interactions[key].get("hint", ""))
+		if not hint.is_empty():
+			hints.append(hint)
+	if hints.is_empty():
+		return "点击交互"
+	return " / ".join(hints)
+
+## 触发交互；id 为空时触发第一个注册的交互。
+func trigger_interaction(id: String = "") -> bool:
+	var key := id
+	if key.is_empty():
+		if _interaction_order.is_empty():
+			return false
+		key = _interaction_order[0]
+	if not _interactions.has(key):
+		return false
+	var callback: Callable = _interactions[key]["callback"]
+	if not callback.is_valid():
+		return false
+	callback.call()
+	return true
+
+## 读取整个虚拟场景（根节点）。
+func get_scene_root() -> Node3D:
+	return scene_root
+
+func get_scene_node(path: String) -> Node:
+	if scene_root == null:
+		return null
+	return scene_root.get_node_or_null(path)
+
+## 在世界坐标画一条标尺；返回标尺 id（失败为 -1）。
+func draw_ruler(from_point: Vector3, to_point: Vector3, label_text: String = "") -> int:
+	if sim_view != null and sim_view.has_method("add_ruler"):
+		return int(sim_view.add_ruler(from_point, to_point, label_text))
+	return -1
+
+func clear_rulers() -> void:
+	if sim_view != null and sim_view.has_method("clear_rulers"):
+		sim_view.clear_rulers()
 
 func log_info(message: String) -> void:
 	print("[virtual:", device_name, "] ", message)
@@ -99,6 +175,8 @@ func _host_bind(bridge: Node, ctx: Dictionary) -> void:
 	package_version = String(ctx.get("version", package_version))
 	model = ctx.get("model", model)
 	props = ctx.get("props", {})
+	scene_root = ctx.get("scene_root", scene_root)
+	sim_view = ctx.get("sim", sim_view)
 	set_process(true)
 	_on_bind(ctx)
 
@@ -117,6 +195,7 @@ func _host_session_stop() -> void:
 
 func _host_unbind() -> void:
 	_on_unbind()
+	clear_interactions()
 
 func _process(delta: float) -> void:
 	if model != null:

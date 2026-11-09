@@ -1,7 +1,7 @@
-schema_version = "1.0.1"
+schema_version = "1.0.2"
 
 id = "hpm_virtual"
-version = "1.0.1"
+version = "1.0.2"
 name = "HPM Virtual"
 tagline = "HPM 虚拟场景编辑与导出"
 maintainer = "HPM <xuezicheng842@outlook.com>"

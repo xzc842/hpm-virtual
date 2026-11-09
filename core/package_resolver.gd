@@ -259,7 +259,7 @@ func _virtual_pack_roots() -> PackedStringArray:
 				roots.append(part)
 	var home := OS.get_environment("HOME")
 	if not home.is_empty():
-		roots.append(home.path_join(".hpm/virtual-packages"))
+		roots.append(home.path_join(".hpm/virtual"))
 	return roots
 
 func _read_virtual_pack(path: String) -> Dictionary:

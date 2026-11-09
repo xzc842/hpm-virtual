@@ -4,6 +4,7 @@ extends "res://sdk/virtual_device.gd"
 var _lamp: MeshInstance3D
 var _light: OmniLight3D
 var _on := false
+var _flash := 0.0
 
 func _on_bind(_ctx: Dictionary) -> void:
 	_lamp = get_model_node("Lamp") as MeshInstance3D
@@ -15,10 +16,15 @@ func _on_bind(_ctx: Dictionary) -> void:
 	if model != null:
 		model.add_child(_light)
 	_apply(false)
+	register_interaction("flash", _on_flash, "点击闪烁")
 	log_info("LED 已绑定")
 
 func _on_session_start() -> void:
 	log_info("调试会话开始")
+
+func _on_flash() -> void:
+	_flash = 0.8
+	log_info("交互：闪烁")
 
 func _on_values(new_values: Dictionary) -> void:
 	_apply(bool(new_values.get("power", false)))
@@ -26,12 +32,14 @@ func _on_values(new_values: Dictionary) -> void:
 func _on_session_stop() -> void:
 	_apply(false)
 
-func _on_tick(_delta: float) -> void:
-	pass
+func _on_tick(delta: float) -> void:
+	if _flash <= 0.0:
+		return
+	_flash = maxf(_flash - delta, 0.0)
+	if _light != null:
+		_light.light_energy = 2.4 if _flash > 0.0 else (1.6 if _on else 0.0)
 
 func _apply(on: bool) -> void:
-	if on == _on:
-		return
 	_on = on
 	log_info("LED %s" % ("亮" if on else "灭"))
 	if _lamp != null:

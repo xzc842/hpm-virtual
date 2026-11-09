@@ -120,7 +120,7 @@ class HPM_PT_packs(bpy.types.Panel):
         packs = state.get_packs(context)
         if not packs:
             layout.label(text="没有发现自定义包")
-            layout.label(text="放到 <项目>/virtual/packages 或 ~/.hpm/virtual-packages")
+            layout.label(text="放到 <项目>/virtual/packages 或 ~/.hpm/virtual")
             return
         for pack in packs:
             row = layout.row()
