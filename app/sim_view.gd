@@ -24,6 +24,8 @@ signal interaction_triggered(device_name: String)
 signal tool_changed(tool: String)
 signal ruler_count_changed(count: int)
 
+const DeviceConfigScript := preload("res://core/device_config.gd")
+
 const DEVICE_DEFAULT_FRICTION := 0.8
 const ENV_DEFAULT_FRICTION := 0.8
 const CAMERA_MOVE_SPEED := 2.5
@@ -212,6 +214,10 @@ func _bind_device(instance: Dictionary) -> void:
 	node.add_child(instance_node)
 
 	var title := String(device_json.get("display_name", device_name))
+	var project_device: Dictionary = App.project_json.get("devices", {}).get(device_name, {})
+	var config := DeviceConfigScript.resolve(
+		device_json, resolved.get("manifest", {}), project_device, instance
+	)
 	var ctx := {
 		"name": device_name,
 		"title": title,
@@ -219,7 +225,8 @@ func _bind_device(instance: Dictionary) -> void:
 		"version": String(resolved.get("version", "")),
 		"node_path": String(instance.get("node", "")),
 		"props": instance.get("props", {}),
-		"device": App.project_json.get("devices", {}).get(device_name, {}),
+		"config": config,
+		"device": project_device,
 		"model": node,
 		"scene_root": _scene_root,
 		"sim": self,
@@ -291,6 +298,16 @@ func _frame_camera() -> void:
 				first = false
 			else:
 				box = box.merge(device_box)
+	if _scene_root != null:
+		var focus := _scene_root.find_child("Target", true, false) as Node3D
+		if focus != null:
+			var focus_box := _compute_aabb(focus)
+			if focus_box.has_volume():
+				if first:
+					box = focus_box
+					first = false
+				else:
+					box = box.merge(focus_box)
 	if first:
 		box = _compute_aabb(_scene_root)
 	if not box.has_volume():
@@ -334,6 +351,13 @@ func add_ruler(from_point: Vector3, to_point: Vector3, label_text: String = "") 
 	if _ruler_tool == null:
 		return -1
 	return _ruler_tool.add_ruler(from_point, to_point, label_text)
+
+func update_ruler(id: int, from_point: Vector3, to_point: Vector3,
+		label_text: String = "") -> bool:
+	if _ruler_tool == null:
+		return false
+	return _ruler_tool.update_ruler(id, from_point, to_point, label_text)
+
 
 func clear_rulers() -> void:
 	if _ruler_tool != null:

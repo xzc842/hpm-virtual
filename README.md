@@ -15,6 +15,12 @@ godot --path . -- --project=examples/project1
 # 示例 2：与示例 1 相同，但 led2 通过自定义虚拟包换成了可点击交互的 LED
 godot --path . -- --project=examples/project2
 
+# 示例 3：通用超声波距离传感器，进入有效距离后实时绘制标尺
+godot --path . -- --project=examples/ultrasonic
+
+# 示例 4：舵机带动长杆扫过右侧超声波，遮挡后 LED 亮
+godot --path . -- --project=examples/servo-arm
+
 # 全部测试
 tests/run_all.sh
 ```
@@ -26,14 +32,20 @@ examples/project1/virtual/virtual.blend
 examples/project2/virtual/virtual.blend
 ```
 
-## 两个示例
+## 四个示例
 
 | 工程 | 内容 |
 | --- | --- |
 | `examples/project1` | STC90C51 + 舵机(P1_0) + led1(P1_1) + led2(P1_2)。固件让舵机在 0°/90°/180° 之间转动，两个 LED 交替/同时闪烁。 |
 | `examples/project2` | 与 project1 相同的固件和场景；`led2` 在 `virtual.json` 中 `override` 到自定义虚拟包 `clickable-led`，点击可切换红/蓝颜色。 |
+| `examples/ultrasonic` | STC90C51 + 通用 `ultrasonic-*` 驱动（TRIG/ECHO）。debug 注册 `target_distance` 输入；`virtual.gd` 移动目标、射线测量并把 `distance` 写回；实测 `< 有效距离` 时实时更新标尺。 |
+| `examples/servo-arm` | 舵机带动长杆从左侧扫到右侧；右侧超声波射线测量杆的位置。固件读回 `sonar_read_cm()`，实测距离 `<= 10 cm` 时点亮 LED。 |
 
 ![project1：舵机 + 两个 LED](docs/images/project1.png)
+
+![ultrasonic：进入有效距离后绘制标尺](docs/images/ultrasonic.png)
+
+![servo-arm：舵机长杆 + 超声波 + LED](docs/images/servo-arm.png)
 
 构建与调试：
 
@@ -62,7 +74,10 @@ core/                 项目/包/模型/物理/调试服务/脚本宿主/标尺
 sdk/virtual_device.gd 设备外部脚本基类（公开接口）
 examples/project1     完整固件 + 虚拟场景 + virtual.blend
 examples/project2     project1 + 自定义虚拟包（可点击 LED）
-blender_addon/        Blender 插件（模型列表、拖入、摩擦、自定义包、导出）
+examples/ultrasonic   通用超声波驱动 + 有效距离标尺仿真
+examples/servo-arm    舵机长杆遮挡超声波 -> LED
+blender_addon/        Blender 插件（模型列表、拖入、摩擦/质量、自定义包、导出）
+packages/ultrasonic-*-1.0.0/ 通用超声驱动包源码（MIT）
 tools/                生成示例场景/Blender 文件、模拟调试服务、打包插件
 tests/                冒烟/真实设备/覆盖包/PWM/标尺/交互/Blender 测试
 docs/spec/            virtual.json / device.json / virtual.gd / 自定义虚拟包
@@ -112,7 +127,16 @@ docs/spec/            virtual.json / device.json / virtual.gd / 自定义虚拟�
   device.json
   device.gltf    # SG90 风格舵机（buffer base64 内嵌，无 .bin）
   virtual.gd     # angle -> 摆臂旋转
+~/.hpm/packages/ultrasonic-*-1.0.0/debug/
+  debug.c        # target_distance 输入 + distance 实测回写
+  device.json    # 物理质量/摩擦 + config 声明
+  device.gltf    # 通用超声波模型（base64，无 .bin）
+  virtual.gd     # 射线测量 -> send("distance")；< effective_distance 更新标尺
 ```
+
+设备包的 `manifest.json` / `device.json` 可以声明 `config` 字段，类型为
+`number` / `bool` / `string`；外部脚本用 `get_config("effective_distance")` 读取。
+每个物体的 `physics` 现在同时支持 `friction` 和 `mass`。
 
 重新生成设备模型：
 
@@ -127,6 +151,7 @@ HPM 设备包内不允许二进制文件，因此 `device.gltf` 使用 base64 �
 
 ```bash
 godot --headless --path . --script res://tools/build_example_scenes.gd
+godot --headless --path . --script res://tools/build_ultrasonic_assets.gd
 blender --background --factory-startup --python tools/build_example_blends.py
 ```
 
@@ -148,6 +173,8 @@ tests/run_blender_addon_test.sh    # 无头测试
    `virtual/packages/`。
 
 自定义包可放在 `~/.hpm/virtual/` 或 `<项目>/virtual/packages/`。
+
+所有 HPM 设备包使用 **MIT** 协议；本仓库自身使用 GPL-2.0-or-later。
 详见 [blender_addon/README.md](blender_addon/README.md) 与
 [自定义虚拟包规范](docs/spec/custom-virtual-pack.md)。
 
@@ -155,7 +182,7 @@ tests/run_blender_addon_test.sh    # 无头测试
 
 已完成：欢迎页/最近项目、GLB 加载、按物体摩擦、包解析、外部脚本缓存加载、
 调试会话探测、SSE 输出流与重连、输入写回、gpio/pwm 真实设备包、
-PWM 调试插件、Blender 插件、自定义包运行时覆盖、两个完整示例工程、
+PWM 调试插件、Blender 插件、自定义包运行时覆盖、四个完整示例工程、
 相机控制、选择/标尺工具、场景读取与外部脚本标尺 API、Logo 启动画面。
 
 未完成：HUD 通道控件、骨骼动画碰撞、正式打包发布、

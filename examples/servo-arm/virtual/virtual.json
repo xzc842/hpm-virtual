@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "scene": "virtual.glb",
+  "physics": {"friction": 0.85, "mass": 1.0, "rough": true},
+  "objects": [
+    {"node": "Floor", "physics": {"friction": 0.9, "mass": 1.0, "rough": true}}
+  ],
+  "devices": [
+    {"name": "servo", "title": "舵机摆杆", "node": "Devices/servo", "package": "pwm", "version": "1.0.0", "props": {"speed_deg_per_s": 120}},
+    {"name": "sonar", "title": "超声波", "node": "Devices/sonar", "package": "ultrasonic", "version": "1.0.0", "config": {"auto_measure": true}},
+    {"name": "led", "title": "LED", "node": "Devices/led", "package": "gpio", "version": "1.0.0", "props": {"color": "red"}}
+  ]
+}

@@ -36,6 +36,8 @@ var package_version := ""
 var model: Node3D = null
 ## virtual.json 里该实例的 props。
 var props: Dictionary = {}
+## 设备包 config（number / bool / string），已按声明类型转换。
+var config: Dictionary = {}
 ## 调试会话是否正在运行。
 var active := false
 ## 最近一次收到的输出通道值。
@@ -64,6 +66,10 @@ func invoke(channel: String) -> void:
 ## 读取最近一次输出值。
 func get_value(channel: String, default_value: Variant = null) -> Variant:
 	return values.get(channel, default_value)
+
+## 读取设备包声明的 config；类型已转换为 number / bool / string。
+func get_config(key: String, default_value: Variant = null) -> Variant:
+	return config.get(key, default_value)
 
 ## 取模型根节点下的节点。path 为空时返回模型根节点。
 func get_model_node(path: String = "") -> Node:
@@ -142,6 +148,18 @@ func draw_ruler(from_point: Vector3, to_point: Vector3, label_text: String = "")
 		return int(sim_view.add_ruler(from_point, to_point, label_text))
 	return -1
 
+func update_ruler(id: int, from_point: Vector3, to_point: Vector3,
+		label_text: String = "") -> bool:
+	if sim_view != null and sim_view.has_method("update_ruler"):
+		return bool(sim_view.update_ruler(id, from_point, to_point, label_text))
+	return false
+
+
+func remove_ruler(id: int) -> void:
+	if sim_view != null and sim_view.has_method("remove_ruler"):
+		sim_view.remove_ruler(id)
+
+
 func clear_rulers() -> void:
 	if sim_view != null and sim_view.has_method("clear_rulers"):
 		sim_view.clear_rulers()
@@ -191,6 +209,7 @@ func _host_bind(bridge: Node, ctx: Dictionary) -> void:
 	package_version = String(ctx.get("version", package_version))
 	model = ctx.get("model", model)
 	props = ctx.get("props", {})
+	config = ctx.get("config", {})
 	scene_root = ctx.get("scene_root", scene_root)
 	sim_view = ctx.get("sim", sim_view)
 	set_process(true)

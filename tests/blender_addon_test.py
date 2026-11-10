@@ -103,6 +103,8 @@ def main() -> None:
     horn_hub = scene.find_node(servo_root, "ServoHorn/ServoHub")
     check(horn_hub is not None and abs(float(horn_hub.hpm_friction) - 0.35) < 1e-4,
           "舵机摆臂摩擦来自 device.json")
+    check(horn_hub is not None and abs(float(horn_hub.hpm_mass) - 0.02) < 1e-4,
+          "舵机摆臂质量来自 device.json")
     scene.add_floor(context)
 
     print("[Custom pack: only affects new placements]")
@@ -125,6 +127,8 @@ def main() -> None:
     barrel = scene.find_node(led2_root, "Body/Barrel2")
     check(barrel is not None and abs(float(barrel.hpm_friction) - 0.35) < 1e-4,
           "自定义包 device.json 摩擦生效")
+    check(barrel is not None and abs(float(barrel.hpm_mass) - 0.02) < 1e-4,
+          "自定义包 device.json 质量生效")
     barrel.hpm_friction = 0.42
     barrel.hpm_bounce = 0.15
 
@@ -142,6 +146,7 @@ def main() -> None:
     check(len(servo_json["objects"]) == 8, "舵机 8 个物体摩擦")
     barrel_json = next(item for item in led2_json["objects"] if item["node"] == "Body/Barrel2")
     check(abs(barrel_json["physics"]["friction"] - 0.42) < 1e-4, "Blender 摩擦编辑写入 virtual.json")
+    check(abs(barrel_json["physics"]["mass"] - 0.02) < 1e-4, "Blender 质量写入 virtual.json")
     floor_json = next(item for item in exported["objects"] if item["node"] == "Floor")
     check(abs(floor_json["physics"]["friction"] - 0.9) < 1e-4, "地板摩擦写入 virtual.json")
 

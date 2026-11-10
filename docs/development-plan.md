@@ -26,15 +26,22 @@ res://
   tests/fixtures/demo-project/    # 内嵌演示设备包，不依赖 ~/.hpm
   examples/project1/    # 舵机 + 双 LED + 固件 + virtual.blend
   examples/project2/    # project1 + clickable-led 自定义包
+  examples/ultrasonic/  # 通用 ultrasonic-* 驱动 + 有效距离标尺
+  examples/servo-arm/   # 舵机长杆扫过超声 -> 实测距离 -> LED
+  packages/ultrasonic-*-1.0.0/ # 通用超声驱动包源码（MIT）
   tools/build_example_scenes.gd # 生成示例 virtual.glb / 自定义包模型
-  tools/build_example_blends.py # 生成两个 virtual.blend
+  tools/build_example_blends.py # 生成四个 virtual.blend
   tools/build_demo_assets.gd   # 生成测试 fixture GLB/glTF
   tools/build_device_assets.gd # 直接生成模型到已安装设备包
   tools/mock_debug_service.py  # 模拟 hpm-gui 调试服务
-  tests/smoke_test.gd          # 55 项无头检查
-  tests/real_packages_test.gd  # 17 项真实设备包检查
+  tests/smoke_test.gd          # 58 项无头检查
+  tests/real_packages_test.gd  # 19 项真实设备包检查
   tests/override_test.gd       # 9 项自定义虚拟包解析检查
   tests/project2_test.gd       # 10 项 project2 覆盖/交互检查
+  tests/config_test.gd         # 8 项 config 类型/优先级检查
+  tests/ultrasonic_scene_test.gd # 超声 3D 测量/标尺检查
+  tests/servo_arm_test.gd       # 舵机长杆遮挡超声检查
+  tests/ultrasonic_plugin_test.c # 超声 debug 输入/回写单测
   tests/ruler_input_test.tscn  # 标尺射线取点/右键删除
   tests/interaction_test.tscn  # 交互注册/悬停高亮/触发
   tests/blender_addon_test.py  # Blender 无头端到端测试
@@ -51,6 +58,8 @@ godot --headless --path . --script res://tests/smoke_test.gd
 # 示例工程（-- 之后是用户参数；先按 examples/README.md 构建固件）
 godot --path . -- --project=examples/project1
 godot --path . -- --project=examples/project2
+godot --path . -- --project=examples/ultrasonic
+godot --path . -- --project=examples/servo-arm
 # 测试
 godot --headless --path . --script res://tests/smoke_test.gd
 godot --headless --path . --script res://tests/real_packages_test.gd
@@ -109,14 +118,19 @@ virtual/virtual.glb ───────────────┘
 - [x] 真实设备包：gpio(LED) 与 pwm(舵机) 的 `device.json`、`device.gltf`、`virtual.gd` 安装进包。
 - [x] pwm 的 `debug.c`：监听 PWM 引脚，高电平占空比 5%–10% 映射到 0–180°。
 - [x] 模型节点按设备类型加前缀（`LedBody`、`ServoHorn`），避免 GLB 内重名重命名。
-- [x] 两个示例工程、17 项包测试、PWM 插件单元测试、截图验证。
+- [x] 四个示例工程、包测试、PWM 插件单元测试、截图验证。
 - [x] 自定义虚拟包运行时解析（`override` 字符串/对象/路径、项目内 `virtual/packages`）。
 - [x] Blender 插件：模型列表、模态拖入、“编辑”弹窗（开关 + 文件夹路径）、按物体摩擦、导出。
 - [x] 自定义包只影响新拖入的实例；场景里已有实例保持各自的 `hpm_override`。
 - [x] 导出时复制覆盖包、缺 manifest 自动生成、GLB 节点与 `virtual.json` 对齐。
 - [x] 示例 project1/project2：舵机 + 双 LED 固件，`hpm sync/build` 通过；
   project2 通过 `override` 把 led2 换成可点击的自定义虚拟包。
-- [x] 每个示例都有可打开的 `virtual/virtual.blend`（设备元数据/摩擦/相机已写入）。
+- [x] 每个示例都有可打开的 `virtual/virtual.blend`（设备元数据/摩擦/质量/相机已写入）。
+- [x] 按物体质量：`physics.mass` 写入 StaticBody3D 的 `hpm_mass` 元数据，Blender 可编辑并导出。
+- [x] `device.json.config` 声明 number/bool/string；`virtual.gd` 用 `get_config()` 读取。
+- [x] 通用超声波驱动包 `ultrasonic-*`（MIT）：driver/debug/device.json/virtual.gd/device.gltf；
+  debug 注册 `target_distance` 输入，3D 脚本射线测量后把 `distance` 写回，`< effective_distance` 更新标尺。
+- [x] servo-arm：舵机长杆扫过右侧超声；超声 `auto_measure` 射线测量，固件读 `sonar_read_cm()`，实测 `<= 10 cm` 时点亮 LED。
 - [x] 相机 WASD/QE/方向键控制 + 状态栏提示。
 - [x] 选择/标尺工具栏、射线高亮与交互触发、透明蓝色标尺（m/cm 自适应、多条、右键删除）。
 - [x] 外部脚本 API：`register_interaction()`、`draw_ruler()`、`get_scene_root()`。
@@ -132,11 +146,14 @@ virtual/virtual.glb ───────────────┘
 
 ## 6. 验证
 
-- 无头冒烟：55 项（SSE 分块/CRLF、项目解析、包解析、GLB、摩擦数值、脚本加载与发光）。
-- 真实设备包：17 项（project1 场景、19 个碰撞体、双 LED、舵机、实例级物理覆盖）。
+- 无头冒烟：58 项（SSE 分块/CRLF、项目解析、包解析、GLB、摩擦数值、脚本加载与发光）。
+- 真实设备包：19 项（project1 场景、19 个碰撞体、双 LED、舵机、实例级摩擦/质量覆盖）。
 - PWM 插件：8 项（ABI、初始 90°、1ms→0°、1.5ms→90°、2ms→180°）。
 - 自定义包解析：9 项（按名/路径、device.json/脚本覆盖、缺失回退）。
 - project2：10 项（覆盖脚本/device.json、注册交互、点击变蓝）。
+- 超声 3D：9 项（target_distance 输入、射线测量、distance 回写、标尺增删）。
+- 舵机长杆：8 项（左/右位置、超声遮挡、标尺）。
+- 固件：`servo-arm` 的 `hpm sync/build` 通过，生成 firmware.hex。
 - 交互：注册/提示/触发/悬停高亮/射线命中设备。
 - 标尺：射线取两点、单位自适应、右键命中删除。
 - Blender 插件：加载真实工程 → 放置 LED/舵机 → 编辑摩擦 → 覆盖模型 → 导出 →
@@ -145,6 +162,9 @@ virtual/virtual.glb ───────────────┘
   截图见 [project1.png](images/project1.png)。
 - 示例固件：`hpm sync --offline && hpm build` 成功；`hpm debug --json --run` 输出
   led1/led2 的 `power` 与 servo 的 `angle` 变化。
+- 超声波：debug 输入 `target_distance` 后，3D 脚本射线测量并回写 `distance`；
+  实测进入有效范围后标尺数量为 1，离开后为 0。
+- 配置：number/bool/string 默认值、项目字符串覆盖、实例优先级全部通过。
 - 待补：真实 hpm-gui 会话的自动化断言、输入 POST 的自动化断言。
 
 ## 7. 已知限制

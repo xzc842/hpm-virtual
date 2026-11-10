@@ -1,0 +1,15 @@
+{
+  "devices": {
+    "sonar": {
+      "config": {
+        "effective_distance": "30",
+        "max_distance": "400",
+        "step_cm": "4"
+      },
+      "driver": "ultrasonic",
+      "echo": "P1_1",
+      "trig": "P1_0"
+    }
+  },
+  "mcu": "stc90c51"
+}

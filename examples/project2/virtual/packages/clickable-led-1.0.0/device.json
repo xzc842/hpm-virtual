@@ -4,14 +4,53 @@
   "version": "1.0.0",
   "model": "model.gltf",
   "script": "virtual.gd",
-  "physics": { "friction": 0.55, "rough": true, "bounce": 0.1 },
+  "physics": {
+    "friction": 0.55,
+    "rough": true,
+    "bounce": 0.1,
+    "mass": 0.05
+  },
   "objects": [
-    { "node": "Body", "physics": { "friction": 0.35, "rough": true, "bounce": 0.2 } },
-    { "node": "Base2", "physics": { "friction": 0.65, "rough": true } },
-    { "node": "Anode2", "physics": { "friction": 0.75, "rough": true } },
-    { "node": "Cathode2", "physics": { "friction": 0.75, "rough": true } }
+    {
+      "node": "Body",
+      "physics": {
+        "friction": 0.35,
+        "rough": true,
+        "bounce": 0.2,
+        "mass": 0.02
+      }
+    },
+    {
+      "node": "Base2",
+      "physics": {
+        "friction": 0.65,
+        "rough": true,
+        "mass": 0.02
+      }
+    },
+    {
+      "node": "Anode2",
+      "physics": {
+        "friction": 0.75,
+        "rough": true,
+        "mass": 0.02
+      }
+    },
+    {
+      "node": "Cathode2",
+      "physics": {
+        "friction": 0.75,
+        "rough": true,
+        "mass": 0.02
+      }
+    }
   ],
   "channels": {
-    "power": { "title": "电源", "type": "bool", "widget": "lamp", "readonly": true }
+    "power": {
+      "title": "电源",
+      "type": "bool",
+      "widget": "lamp",
+      "readonly": true
+    }
   }
 }

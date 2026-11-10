@@ -24,7 +24,7 @@ GODOT="${GODOT:-godot}"
 cd "$ROOT"
 mkdir -p .tmp
 : > .tmp/.gdignore
-for test in smoke_test real_packages_test override_test project2_test; do
+for test in smoke_test real_packages_test override_test project2_test config_test ultrasonic_scene_test servo_arm_test; do
     "$GODOT" --headless --path . --script "res://tests/${test}.gd"
 done
 "$GODOT" --headless --path . res://tests/ruler_input_test.tscn
@@ -33,6 +33,8 @@ done
 "$ROOT/tests/run_blender_addon_test.sh"
 if command -v hpm >/dev/null && command -v sdcc >/dev/null; then
     "$ROOT/tests/run_example_test.sh"
+    "$ROOT/tests/run_ultrasonic_plugin_test.sh"
+    "$ROOT/tests/run_servo_arm_build.sh"
 else
     echo "skip: hpm/sdcc not installed"
 fi

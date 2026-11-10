@@ -12,11 +12,16 @@ Blender 插件用它加载模型并摆放；Godot 运行时用它加载外部脚
   "version": "1.0.0",
   "model": "device.gltf",
   "script": "virtual.gd",
-  "physics": { "friction": 0.6, "rough": true, "bounce": 0.05 },
+  "physics": { "friction": 0.6, "mass": 0.08, "rough": true, "bounce": 0.05 },
   "objects": [
-    { "node": "Body", "physics": { "friction": 0.6 } },
-    { "node": "Lamp", "physics": { "friction": 0.3, "bounce": 0.2 } }
+    { "node": "Body", "physics": { "friction": 0.6, "mass": 0.06 } },
+    { "node": "Lamp", "physics": { "friction": 0.3, "mass": 0.01, "bounce": 0.2 } }
   ],
+  "config": {
+    "effective_distance": {
+      "type": "number", "title": "有效距离", "default": 30.0, "unit": "cm"
+    }
+  },
   "defaults": { "power": false },
   "channels": {
     "power": { "title": "电源", "type": "bool", "widget": "checkbox" }
@@ -34,8 +39,9 @@ Blender 插件用它加载模型并摆放；Godot 运行时用它加载外部脚
 | `version` | 否 | 资产版本；包版本以 `manifest.json` 为准。 |
 | `model` | 否 | 模型文件，相对 `debug/`，默认 `device.gltf`。 |
 | `script` | 否 | 外部脚本，相对 `debug/`，默认 `virtual.gd`。 |
-| `physics` | 否 | 设备模型的默认摩擦参数。 |
-| `objects` | 否 | 按物体覆盖摩擦参数。 |
+| `physics` | 否 | 设备模型的默认物理参数（摩擦、质量等）。 |
+| `objects` | 否 | 按物体覆盖物理参数。 |
+| `config` | 否 | 驱动配置字段声明；类型 `number` / `bool` / `string`。 |
 | `defaults` | 否 | 脚本 `_on_bind` 时的初始 props（预留）。 |
 | `channels` | 否 | 控件描述；运行时以调试服务 `/devices` 为准。 |
 | `mount` | 否 | 预留：`board` / `free`，供 Blender 插件决定吸附方式。 |
@@ -45,10 +51,41 @@ Blender 插件用它加载模型并摆放；Godot 运行时用它加载外部脚
 与 `virtual.json` 完全一致，见 [virtual-json.md](virtual-json.md#physics)。
 自定义虚拟包可以提供自己的 `device.json`，覆盖这里的默认值。
 
-- `physics` 是该设备所有网格的默认值，未写时用 `0.8`。
+- `physics` 是该设备所有网格的默认值，摩擦未写时用 `0.8`，质量未写时用 `1.0`。
 - `objects[].node` 相对设备模型根节点（如 `Body`、`Lamp`）。
 - 匹配规则对节点及其子网格生效；更深层覆盖优先。
 - 摩擦按**物体**（网格节点）生成 `StaticBody3D + PhysicsMaterial`，不按面拆分。
+- 静态碰撞体没有真实质量；质量写入碰撞体 `hpm_mass` 元数据，供脚本/导出使用。
+
+### config
+
+`device.json.config` 声明设备自己的配置字段，外部 `virtual.gd` 通过
+`get_config(key, default)` 读取：
+
+```json
+{
+  "config": {
+    "effective_distance": {
+      "type": "number", "title": "有效距离", "default": 30.0,
+      "min": 1.0, "max": 400.0, "unit": "cm"
+    },
+    "auto_report": { "type": "bool", "title": "自动上报", "default": true },
+    "mode": { "type": "string", "title": "模式", "default": "single" }
+  }
+}
+```
+
+| 字段 | 说明 |
+| --- | --- |
+| `type` | `number`（含整数/浮点）、`bool`、`string`。 |
+| `default` | 默认值；manifest 里的 `config` 作为第二兜底。 |
+| `title` / `unit` / `min` / `max` | 可选的界面元数据。 |
+
+取值优先级：`virtual.json.devices[].config` > `project.json.devices.<name>.config`
+> `device.json.config.default` > `manifest.json.config.default`。
+`project.json` 里的值通常是字符串，运行时会按声明类型转换成数值/布尔。
+
+`manifest.json` 的 `config` 也要声明字段（HPM 用于项目配置 UI/校验）。
 
 ### 模型与脚本的目录约定
 

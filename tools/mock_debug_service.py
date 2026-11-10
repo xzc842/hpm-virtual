@@ -42,7 +42,14 @@ def build_devices():
             "title": "LED",
             "values": {"power": False},
         },
-        "servo": {
+        "sonar": {
+        "driver": "ultrasonic",
+        "config": {"effective_distance": "30", "max_distance": "400"},
+        "title": "超声波测距",
+        "values": {"target_distance": 100.0, "distance": 100.0, "in_range": False,
+                   "effective_distance": 30.0},
+    },
+    "servo": {
             "driver": "pwm",
             "config": {"pin": "P1_1"},
             "title": "Servo",
@@ -157,8 +164,15 @@ class Handler(BaseHTTPRequestHandler):
 
         cursor = 0
         led_names = [name for name in states if name.startswith("led")]
+        # 有超声波时由距离输入控制 LED，不再自动闪烁。
+        led_blink_names = list(led_names) if "sonar" not in states else []
         time.sleep(0.6)
-        for name in led_names:
+        if "sonar" in states:
+            states["sonar"].update({"target_distance": 100.0})
+            cursor += 1
+            self._event(cursor, "sonar", dict(states["sonar"]))
+
+        for name in led_blink_names:
             states[name]["power"] = True
             cursor += 1
             self._event(cursor, name, dict(states[name]))
@@ -170,14 +184,17 @@ class Handler(BaseHTTPRequestHandler):
         deadline = time.time() + STREAM_LIFE
         next_blink = time.time() + 0.5
         next_servo = time.time() + 1.5
+        next_sonar = time.time() + 0.6
+        sonar_step = 0
+        input_cursor = len(INPUTS)
         next_ping = time.time() + 0.5
         angles = [0.0, 90.0, 180.0]
         angle_index = 0
         while time.time() < deadline:
             time.sleep(0.1)
             now = time.time()
-            if led_names and now >= next_blink:
-                for name in led_names:
+            if led_blink_names and now >= next_blink:
+                for name in led_blink_names:
                     states[name]["power"] = not states[name]["power"]
                     cursor += 1
                     self._event(cursor, name, dict(states[name]))
@@ -190,6 +207,32 @@ class Handler(BaseHTTPRequestHandler):
                 cursor += 1
                 self._event(cursor, "servo", dict(states["servo"]))
                 next_servo = now + 1.5
+            if "sonar" in states and now >= next_sonar:
+                sonar_step = (sonar_step + 1) % 10
+                if sonar_step < 2:
+                    states["sonar"].update({"target_distance": 100.0})
+                else:
+                    cm = max(25.0 - (sonar_step - 2) * 4.0, 1.0)
+                    states["sonar"].update({"target_distance": cm})
+                cursor += 1
+                self._event(cursor, "sonar", dict(states["sonar"]))
+                next_sonar = now + 0.6
+            if "led" in states and "sonar" in states:
+                for raw in INPUTS[input_cursor:]:
+                    try:
+                        payload = json.loads(raw)
+                    except ValueError:
+                        continue
+                    if payload.get("device") == "sonar" and payload.get("channel") == "distance":
+                        distance = float(payload.get("value", 400.0))
+                        on = distance < 30.0
+                        if states["led"].get("power") != on:
+                            states["led"]["power"] = on
+                            sys.stderr.write("mock: led %s distance %.1f\n" % ("on" if on else "off", distance))
+                            sys.stderr.flush()
+                            cursor += 1
+                            self._event(cursor, "led", dict(states["led"]))
+                input_cursor = len(INPUTS)
             if now >= next_ping:
                 self._chunk(": ping\n\n")
                 next_ping = now + 0.5

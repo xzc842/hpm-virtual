@@ -54,8 +54,8 @@ def find_object(name: str):
 def migrate_legacy_props() -> None:
     """把旧版本用 obj["hpm_*"]/scene["hpm_*"] 存的数据迁移到 RNA 属性。"""
     object_props = (
-        "hpm_device", "hpm_props", "hpm_override", "hpm_friction", "hpm_rough",
-        "hpm_bounce", "hpm_physics_enabled", "hpm_physics_owner",
+        "hpm_device", "hpm_props", "hpm_override", "hpm_friction", "hpm_mass",
+        "hpm_rough", "hpm_bounce", "hpm_physics_enabled", "hpm_physics_owner",
     )
     for obj in bpy.data.objects:
         keys = obj.keys()
@@ -224,6 +224,7 @@ def apply_device_physics(root: bpy.types.Object, device_json: dict[str, Any]) ->
     for mesh in meshes_under(root):
         physics = _effective_physics(root, mesh, device_json)
         mesh.hpm_friction = float(physics.get("friction", DEFAULT_FRICTION))
+        mesh.hpm_mass = float(physics.get("mass", 1.0))
         mesh.hpm_rough = bool(physics.get("rough", True))
         mesh.hpm_bounce = float(physics.get("bounce", 0.0))
         mesh.hpm_physics_enabled = bool(physics.get("enabled", True))
@@ -236,6 +237,8 @@ def ensure_physics_props(obj: bpy.types.Object) -> None:
         return
     if not obj.hpm_physics_owner:
         obj.hpm_physics_owner = "environment"
+    if obj.hpm_mass <= 0.0:
+        obj.hpm_mass = 1.0
 
 
 def _import_model(path: str) -> list[bpy.types.Object]:

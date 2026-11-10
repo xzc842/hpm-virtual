@@ -69,6 +69,20 @@ func add_ruler(start: Vector3, end: Vector3, label_text: String = "") -> int:
 	ruler_count_changed.emit(_rulers.size())
 	return id
 
+func update_ruler(id: int, start: Vector3, end: Vector3,
+		custom_label: String = "") -> bool:
+	if start.distance_to(end) < 0.0001:
+		return false
+	for data: Dictionary in _rulers:
+		if int(data["id"]) == id:
+			data["start"] = start
+			data["end"] = end
+			data["custom_label"] = custom_label
+			_update_visual(data, start, end, custom_label)
+			return true
+	return false
+
+
 func remove_ruler(id: int) -> bool:
 	for index in range(_rulers.size()):
 		if int(_rulers[index]["id"]) == id:

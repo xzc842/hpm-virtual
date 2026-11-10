@@ -36,7 +36,12 @@ sys.path.insert(0, str(ROOT / "blender_addon"))
 import hpm_virtual  # noqa: E402
 from hpm_virtual import data, scene, state  # noqa: E402
 
-PROJECTS = [ROOT / "examples" / "project1", ROOT / "examples" / "project2"]
+PROJECTS = [
+    ROOT / "examples" / "project1",
+    ROOT / "examples" / "project2",
+    ROOT / "examples" / "ultrasonic",
+    ROOT / "examples" / "servo-arm",
+]
 
 
 def main() -> None:
@@ -129,6 +134,7 @@ def apply_environment_physics(virtual: dict) -> None:
         physics = rules.get(obj.name)
         if physics:
             obj.hpm_friction = float(physics.get("friction", 0.8))
+            obj.hpm_mass = float(physics.get("mass", 1.0))
             obj.hpm_rough = bool(physics.get("rough", True))
             obj.hpm_bounce = float(physics.get("bounce", 0.0))
             obj.hpm_physics_enabled = bool(physics.get("enabled", True))

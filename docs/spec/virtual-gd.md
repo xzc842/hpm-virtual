@@ -40,7 +40,7 @@ func _on_session_start() -> void:
 | `_on_tick(delta)` | 每帧 | 做平滑动画；**不要覆写 `_process`**。 |
 | `_on_unbind()` | 场景销毁 | 释放自己创建的资源。 |
 
-`ctx` 字段：`name`、`title`、`package`、`version`、`node_path`、`props`、`device`（`project.json` 里的设备配置）、`model`（设备根节点）、`scene_root`（整个场景根）、`sim`（SimView）。
+`ctx` 字段：`name`、`title`、`package`、`version`、`node_path`、`props`、`config`（已按类型转换的设备配置）、`device`（`project.json` 里的设备配置）、`model`（设备根节点）、`scene_root`（整个场景根）、`sim`（SimView）。
 
 ### 交互
 
@@ -66,6 +66,8 @@ func _on_bind(_ctx: Dictionary) -> void:
 ```
 
 - 坐标是世界坐标；标尺默认透明蓝色，单位在 m/cm 之间自动切换。
+- `draw_ruler()` 返回 id，可用 `update_ruler(id, from, to, label)` 原地更新，
+  用 `remove_ruler(id)` 删除单条。
 - 标尺不受设备生命周期限制；脚本退出时可用 `clear_rulers()` 清理。
 
 ## API
@@ -75,6 +77,8 @@ func _on_bind(_ctx: Dictionary) -> void:
 | `device_name` / `device_title` | 设备实例名/显示名。 |
 | `model: Node3D` | 设备模型根节点。 |
 | `props: Dictionary` | `virtual.json` 的实例参数。 |
+| `config: Dictionary` | 设备包 `config` 解析后的值。 |
+| `get_config(key, default)` | 读 config；number/bool/string 已转换。 |
 | `active: bool` | 调试会话是否运行。 |
 | `values: Dictionary` | 最近一次输出值。 |
 | `register_interaction(id, callback, hint)` | 注册可点击交互；选择模式悬停高亮，左键触发。 |
@@ -83,7 +87,8 @@ func _on_bind(_ctx: Dictionary) -> void:
 | `trigger_interaction(id := "")` | 主动触发交互（默认第一个）。 |
 | `get_scene_root()` / `get_scene_node(path)` | 只读访问整个虚拟场景。 |
 | `draw_ruler(from, to, label := "")` | 在世界坐标画标尺，返回 id；支持多条。 |
-| `clear_rulers()` | 清除所有标尺。 |
+| `update_ruler(id, from, to, label := "")` | 原地更新标尺，返回是否成功。 |
+| `remove_ruler(id)` / `clear_rulers()` | 删除单条/全部标尺。 |
 | `send(channel, value)` | 写输入通道，内部 `POST /devices/input`。 |
 | `invoke(channel)` | 触发按钮/动作通道。 |
 | `get_value(channel, default)` | 读最近值。 |

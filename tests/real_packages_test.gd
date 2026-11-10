@@ -40,7 +40,7 @@ func _init() -> void:
 		"name": "led2", "node": "Devices/led2", "package": "gpio",
 		"version": "1.0.0", "props": {"color": "green"},
 		"objects": [
-			{"node": "Body", "physics": {"friction": 0.35, "bounce": 0.2}},
+			{"node": "Body", "physics": {"friction": 0.35, "mass": 0.12, "bounce": 0.2}},
 			{"node": "Base2", "physics": {"friction": 0.65}},
 			{"node": "Anode2", "physics": {"friction": 0.75}},
 			{"node": "Cathode2", "physics": {"friction": 0.75}},
@@ -88,6 +88,10 @@ func _init() -> void:
 	var base2 := led2_node.get_node_or_null("Base2/HPMPhysics_Base2") as StaticBody3D
 	if base2 != null:
 		_check(is_equal_approx(base2.physics_material_override.friction, 0.65), "LED2 实例摩擦")
+	var body2 := led2_node.get_node_or_null("Body/Barrel2/HPMPhysics_Barrel2") as StaticBody3D
+	if body2 != null:
+		_check(is_equal_approx(PhysicsBuilder.get_mass(body2), 0.12), "LED2 实例质量")
+		_check(is_equal_approx(float(body2.get_meta("hpm_mass", 0.0)), 0.12), "质量元数据")
 
 	# LED1 脚本
 	var led1_script := _instantiate(led1_resolved)

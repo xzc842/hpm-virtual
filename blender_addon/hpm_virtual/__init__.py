@@ -25,7 +25,7 @@ from . import data, exporter, operators, panels, scene, state
 bl_info = {
     "name": "HPM Virtual",
     "author": "HPM",
-    "version": (1, 0, 5),
+    "version": (1, 0, 6),
     "blender": (4, 2, 0),
     "location": "3D 视图 > 侧栏 > HPM",
     "description": "HPM 虚拟环境编辑与导出",
@@ -76,6 +76,9 @@ def register() -> None:
     bpy.types.Object.hpm_friction = bpy.props.FloatProperty(
         name="摩擦系数", min=0.0, max=1.0, default=0.8, precision=3
     )
+    bpy.types.Object.hpm_mass = bpy.props.FloatProperty(
+        name="质量 (kg)", min=0.001, max=100000.0, default=1.0, precision=3
+    )
     bpy.types.Object.hpm_rough = bpy.props.BoolProperty(name="Rough", default=True)
     bpy.types.Object.hpm_bounce = bpy.props.FloatProperty(
         name="弹性", min=0.0, max=1.0, default=0.0, precision=3
@@ -96,8 +99,8 @@ def unregister() -> None:
         if hasattr(bpy.types.Scene, prop_name):
             delattr(bpy.types.Scene, prop_name)
     for prop_name in (
-        "hpm_device", "hpm_props", "hpm_override", "hpm_friction", "hpm_rough",
-        "hpm_bounce", "hpm_physics_enabled", "hpm_physics_owner",
+        "hpm_device", "hpm_props", "hpm_override", "hpm_friction", "hpm_mass",
+        "hpm_rough", "hpm_bounce", "hpm_physics_enabled", "hpm_physics_owner",
     ):
         if hasattr(bpy.types.Object, prop_name):
             delattr(bpy.types.Object, prop_name)

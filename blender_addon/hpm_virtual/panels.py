@@ -103,7 +103,7 @@ class HPM_PT_devices(bpy.types.Panel):
 
 
 class HPM_PT_friction(bpy.types.Panel):
-    bl_label = "物体摩擦"
+    bl_label = "物体物理"
     bl_idname = "HPM_PT_friction"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -121,6 +121,7 @@ class HPM_PT_friction(bpy.types.Panel):
         layout.label(text=f"归属：{owner}")
         column = layout.column(align=True)
         column.prop(obj, "hpm_friction", text="摩擦系数")
+        column.prop(obj, "hpm_mass", text="质量 (kg)")
         column.prop(obj, "hpm_rough", text="Rough")
         column.prop(obj, "hpm_bounce", text="弹性")
         column.prop(obj, "hpm_physics_enabled", text="启用碰撞")

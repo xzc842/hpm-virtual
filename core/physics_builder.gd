@@ -14,12 +14,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-# 按物体生成静态碰撞与摩擦。
+# 按物体生成静态碰撞、摩擦与质量元数据。
 #
 # 每个 MeshInstance3D 得到一个 StaticBody3D 子节点，摩擦来自：
 #   1) overrides 中匹配该节点（或它的祖先）的 physics；
 #   2) default_physics；
 #   3) default_friction 兜底。
+# 静态碰撞体没有真实质量，质量写入 body 的 hpm_mass 元数据，
+# 供脚本、HUD 和导出使用。
 # 设备模型用 device.json 的 physics/objects，场景用 virtual.json 的同名字段。
 class_name PhysicsBuilder
 extends RefCounted
@@ -122,9 +124,17 @@ static func _build_body(mesh: MeshInstance3D, physics: Dictionary, default_frict
 	collision.shape = shape_resource
 	body.add_child(collision)
 	body.physics_material_override = make_material(physics, default_friction)
+	body.set_meta("hpm_mass", clampf(float(physics.get("mass", 1.0)), 0.001, 100000.0))
+	body.set_meta("hpm_physics", physics.duplicate(true))
 	mesh.add_child(body)
 	mesh.set_meta("hpm_physics_built", true)
 	return true
+
+static func get_mass(body: StaticBody3D) -> float:
+	if body == null:
+		return 0.0
+	return float(body.get_meta("hpm_mass", 1.0))
+
 
 static func make_material(physics: Dictionary, default_friction: float = 0.8) -> PhysicsMaterial:
 	var material := PhysicsMaterial.new()

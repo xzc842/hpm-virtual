@@ -9,9 +9,9 @@ Godot 打开项目时读取。`virtual.glb` 里同一场景的节点名必须与
 {
   "version": 1,
   "scene": "virtual.glb",
-  "physics": { "friction": 0.75, "rough": true },
+  "physics": { "friction": 0.75, "mass": 1.0, "rough": true },
   "objects": [
-    { "node": "Environment/Floor", "physics": { "friction": 0.9, "rough": true } }
+    { "node": "Environment/Floor", "physics": { "friction": 0.9, "mass": 1.0, "rough": true } }
   ],
   "devices": [
     {
@@ -42,12 +42,13 @@ Godot 打开项目时读取。`virtual.glb` 里同一场景的节点名必须与
 ### physics
 
 ```json
-{ "friction": 0.8, "rough": true, "bounce": 0.0, "absorbent": false, "enabled": true }
+{ "friction": 0.8, "mass": 1.0, "rough": true, "bounce": 0.0, "absorbent": false, "enabled": true }
 ```
 
 | 字段 | 默认 | 说明 |
 | --- | --- | --- |
 | `friction` | `0.8` | 0–1，按物体生效。 |
+| `mass` | `1.0` | 质量 kg，静态碰撞体写入 `hpm_mass` 元数据。 |
 | `rough` | `true` | Godot `PhysicsMaterial.rough`。为 `false` 时引擎按双方材质合成摩擦。 |
 | `bounce` | `0.0` | 0–1。 |
 | `absorbent` | `false` | Godot `PhysicsMaterial.absorbent`。 |
@@ -74,6 +75,7 @@ Godot 打开项目时读取。`virtual.glb` 里同一场景的节点名必须与
 | `script` | 否 | 覆盖 `device.json` 的 `script`。 |
 | `model` | 否 | 覆盖 `device.json` 的 `model`（给 Blender 插件用）。 |
 | `props` | 否 | 传给脚本 `_on_bind(ctx.props)` 的实例参数。 |
+| `config` | 否 | 实例级 config 覆盖，优先于 project.json 和设备默认值。 |
 | `physics` | 否 | 实例级默认物理参数，覆盖设备包 `device.json` 的同名字段。 |
 | `objects` | 否 | 实例级按物体物理覆盖，规则同 `device.json`，优先于设备包规则。 |
 | `override` | 否 | 自定义虚拟包（字符串或 `{name, version, path}`），覆盖模型/`device.json`/`virtual.gd`。见 [custom-virtual-pack.md](custom-virtual-pack.md)。 |

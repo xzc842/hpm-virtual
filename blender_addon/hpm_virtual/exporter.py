@@ -32,6 +32,7 @@ def _physics_dict(obj: bpy.types.Object) -> dict[str, Any]:
     scene.ensure_physics_props(obj)
     return {
         "friction": round(float(scene.get_prop(obj, "hpm_friction", 0.8)), 4),
+        "mass": round(float(scene.get_prop(obj, "hpm_mass", 1.0)), 4),
         "rough": bool(scene.get_prop(obj, "hpm_rough", True)),
         "bounce": round(float(scene.get_prop(obj, "hpm_bounce", 0.0)), 4),
         "enabled": bool(scene.get_prop(obj, "hpm_physics_enabled", True)),
@@ -123,6 +124,7 @@ def _ensure_manifest(pack_dir: str, name: str, version: str, target: str) -> Non
     manifest.setdefault("version", version)
     if target:
         manifest.setdefault("target", target)
+    manifest.setdefault("license", "MIT")
     data.write_json(manifest_path, manifest)
 
 

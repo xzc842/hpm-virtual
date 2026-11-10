@@ -1,0 +1,13 @@
+build/
+driver/
+driver.json
+*.asm
+*.lst
+*.rel
+*.rst
+*.sym
+*.ihx
+*.hex
+*.map
+*.mem
+*.lk

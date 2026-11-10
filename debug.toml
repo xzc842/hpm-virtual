@@ -1,0 +1,14 @@
+# 由 hpm-gui 生成的默认 mcus 配置
+[simulator]
+stream_capacity = 4096
+start_paused = false
+control_poll_interval = 64
+clock_step_interval = 100
+
+[crystal]
+frequency_hz = 16000000
+cycles_per_instruction = 4
+
+[debug]
+log_level = "info"
+log_output = "stderr"

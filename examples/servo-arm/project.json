@@ -1,0 +1,23 @@
+{
+  "devices": {
+    "led": {
+      "driver": "gpio",
+      "pin": "P1_3"
+    },
+    "servo": {
+      "driver": "pwm",
+      "pin": "P1_0"
+    },
+    "sonar": {
+      "config": {
+        "effective_distance": "10",
+        "max_distance": "400",
+        "step_cm": "4"
+      },
+      "driver": "ultrasonic",
+      "echo": "P1_2",
+      "trig": "P1_1"
+    }
+  },
+  "mcu": "stc90c51"
+}

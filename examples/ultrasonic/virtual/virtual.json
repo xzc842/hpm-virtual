@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "scene": "virtual.glb",
+  "physics": {
+    "friction": 0.85,
+    "mass": 1.0,
+    "rough": true
+  },
+  "objects": [
+    {
+      "node": "Floor",
+      "physics": { "friction": 0.9, "mass": 1.0, "rough": true }
+    },
+    {
+      "node": "Target",
+      "physics": { "friction": 0.5, "mass": 0.2, "rough": true }
+    }
+  ],
+  "devices": [
+    {
+      "name": "sonar",
+      "title": "超声波测距",
+      "node": "Devices/sonar",
+      "package": "ultrasonic",
+      "version": "1.0.0",
+      "props": {}
+    }
+  ]
+}
