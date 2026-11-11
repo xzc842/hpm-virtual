@@ -61,7 +61,13 @@ typedef struct {
 static void on_pin(UltrasonicCtx* ctx, const HpmDebugPinEvent* pin) {
     if (!ctx->has_trig || !pin->pin || strcmp(pin->pin, ctx->trig) != 0) return;
     const uint32_t value = pin->value ? 1u : 0u;
-    (void)value;
+    if (ctx->has_echo && value == 1u && ctx->trig_level == 0u) {
+        /* 先清掉上电默认高电平，只有近距才发一个 ECHO 脉冲。 */
+        ctx->api->set_pin(ctx->api->host, ctx->echo, 0);
+        if (ctx->distance < ctx->effective) {
+            ctx->api->pulse_pin(ctx->api->host, ctx->echo, 1, 0, 1000000);
+        }
+    }
     ctx->trig_level = value;
 }
 
@@ -180,8 +186,7 @@ static void handle_json(UltrasonicCtx* ctx, const char* text) {
         ctx->target_distance = clamp(value, 2.0, ctx->max_distance);
         ctx->in_range = ctx->distance < ctx->effective;
         if (ctx->has_echo) {
-            ctx->api->set_pin(ctx->api->host, ctx->echo,
-                              ctx->distance < ctx->effective ? 1 : 0);
+            ctx->api->set_pin(ctx->api->host, ctx->echo, 0);
         }
         emit_state(ctx);
         return;
@@ -191,8 +196,7 @@ static void handle_json(UltrasonicCtx* ctx, const char* text) {
         ctx->distance = clamp(value, 0.0, ctx->max_distance);
         ctx->in_range = ctx->distance < ctx->effective;
         if (ctx->has_echo) {
-            ctx->api->set_pin(ctx->api->host, ctx->echo,
-                              ctx->distance < ctx->effective ? 1 : 0);
+            ctx->api->set_pin(ctx->api->host, ctx->echo, 0);
         }
         emit_state(ctx);
         return;

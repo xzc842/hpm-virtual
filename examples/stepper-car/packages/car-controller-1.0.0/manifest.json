@@ -1,0 +1,9 @@
+{
+  "type": "hpm-virtual-pack",
+  "name": "car-controller",
+  "version": "1.0.0",
+  "target": "car",
+  "description": "四轮小车底盘运动控制器",
+  "license": "MIT",
+  "chip": "*"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "car-controller",
+  "display_name": "小车底盘",
+  "version": "1.0.0",
+  "script": "virtual.gd",
+  "physics": {
+    "rigid": true,
+    "mass": 1.2,
+    "friction": 0.8,
+    "bounce": 0.0
+  }
+}

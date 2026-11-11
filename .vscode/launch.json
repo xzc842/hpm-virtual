@@ -8,7 +8,7 @@
             "type": "hpm",
             "request": "launch",
             "name": "HPM 虚拟调试",
-            "project": "/home/xzc/桌面/项目/hpm-virtual/examples/servo-arm/",
+            "project": "/home/xzc/桌面/项目/hpm-virtual/examples/stepper-car/",
             "stopOnEntry": false
         }
     ]

@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "scene": "virtual.glb",
+  "physics": {
+    "friction": 0.85,
+    "mass": 1.0,
+    "rough": true
+  },
+  "objects": [
+    {
+      "node": "Floor",
+      "physics": {
+        "friction": 0.9,
+        "mass": 1.0,
+        "rough": true
+      }
+    },
+    {
+      "node": "Wall",
+      "physics": {
+        "friction": 0.8,
+        "mass": 10.0,
+        "rough": true
+      }
+    }
+  ],
+  "devices": [
+    {
+      "name": "car",
+      "title": "四轮小车",
+      "node": "Car",
+      "package": "car-controller",
+      "version": "1.0.0",
+      "props": {}
+    },
+    {
+      "name": "stepper_fl",
+      "title": "左前轮",
+      "node": "Car/stepper_fl",
+      "package": "stepper",
+      "version": "1.0.0",
+      "config": {
+        "step_angle": "2"
+      },
+      "physics": {
+        "enabled": false
+      }
+    },
+    {
+      "name": "stepper_fr",
+      "title": "右前轮",
+      "node": "Car/stepper_fr",
+      "package": "stepper",
+      "version": "1.0.0",
+      "config": {
+        "step_angle": "2"
+      },
+      "physics": {
+        "enabled": false
+      }
+    },
+    {
+      "name": "stepper_rl",
+      "title": "左后轮",
+      "node": "Car/stepper_rl",
+      "package": "stepper",
+      "version": "1.0.0",
+      "config": {
+        "step_angle": "2"
+      },
+      "physics": {
+        "enabled": false
+      }
+    },
+    {
+      "name": "stepper_rr",
+      "title": "右后轮",
+      "node": "Car/stepper_rr",
+      "package": "stepper",
+      "version": "1.0.0",
+      "config": {
+        "step_angle": "2"
+      },
+      "physics": {
+        "enabled": false
+      }
+    },
+    {
+      "name": "sonar",
+      "title": "超声波",
+      "node": "Car/sonar",
+      "package": "ultrasonic",
+      "version": "1.0.0",
+      "config": {
+        "auto_measure": true
+      },
+      "physics": {
+        "enabled": false
+      }
+    }
+  ]
+}

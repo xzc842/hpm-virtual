@@ -35,6 +35,7 @@ if command -v hpm >/dev/null && command -v sdcc >/dev/null; then
     "$ROOT/tests/run_example_test.sh"
     "$ROOT/tests/run_ultrasonic_plugin_test.sh"
     "$ROOT/tests/run_servo_arm_build.sh"
+    "$ROOT/tests/run_stepper_car_build.sh"
 else
     echo "skip: hpm/sdcc not installed"
 fi

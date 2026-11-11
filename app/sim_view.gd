@@ -185,9 +185,12 @@ func _bind_device(instance: Dictionary) -> void:
 
 	var device_json: Dictionary = resolved.get("device_json", {})
 	var merged := _merge_physics(device_json, instance)
-	_report["physics_bodies"] += PhysicsBuilder.apply(
-		node, merged["physics"], merged["objects"], DEVICE_DEFAULT_FRICTION
-	)
+	if bool(merged.get("physics", {}).get("rigid", false)):
+		PhysicsBuilder.build_rigid(node, merged["physics"])
+	elif bool(merged.get("physics", {}).get("enabled", true)):
+		_report["physics_bodies"] += PhysicsBuilder.apply(
+			node, merged["physics"], merged["objects"], DEVICE_DEFAULT_FRICTION
+		)
 	if not String(resolved.get("override_error", "")).is_empty():
 		_report["errors"].append("设备 %s：%s" % [device_name, resolved.get("override_error")])
 	elif not (resolved.get("override", {}) as Dictionary).is_empty():

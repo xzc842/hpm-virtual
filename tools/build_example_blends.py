@@ -41,6 +41,7 @@ PROJECTS = [
     ROOT / "examples" / "project2",
     ROOT / "examples" / "ultrasonic",
     ROOT / "examples" / "servo-arm",
+    ROOT / "examples" / "stepper-car",
 ]
 
 

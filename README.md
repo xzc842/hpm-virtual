@@ -21,6 +21,9 @@ godot --path . -- --project=examples/ultrasonic
 # 示例 4：舵机带动长杆扫过右侧超声波，遮挡后 LED 亮
 godot --path . -- --project=examples/servo-arm
 
+# 示例 5：四轮步进小车 + 超声波避墙
+godot --path . -- --project=examples/stepper-car
+
 # 全部测试
 tests/run_all.sh
 ```
@@ -30,9 +33,12 @@ tests/run_all.sh
 ```
 examples/project1/virtual/virtual.blend
 examples/project2/virtual/virtual.blend
+examples/ultrasonic/virtual/virtual.blend
+examples/servo-arm/virtual/virtual.blend
+examples/stepper-car/virtual/virtual.blend
 ```
 
-## 四个示例
+## 五个示例
 
 | 工程 | 内容 |
 | --- | --- |
@@ -40,6 +46,7 @@ examples/project2/virtual/virtual.blend
 | `examples/project2` | 与 project1 相同的固件和场景；`led2` 在 `virtual.json` 中 `override` 到自定义虚拟包 `clickable-led`，点击可切换红/蓝颜色。 |
 | `examples/ultrasonic` | STC90C51 + 通用 `ultrasonic-*` 驱动（TRIG/ECHO）。debug 注册 `target_distance` 输入；`virtual.gd` 移动目标、射线测量并把 `distance` 写回；实测 `< 有效距离` 时实时更新标尺。 |
 | `examples/servo-arm` | 舵机带动长杆从左侧扫到右侧；右侧超声波射线测量杆的位置。固件读回 `sonar_read_cm()`，实测距离 `<= 10 cm` 时点亮 LED。 |
+| `examples/stepper-car` | 四个 `stepper-*` 步进电机驱动四轮小车；车头超声波检测墙，距离过近时先后退、再转向、继续前进。 |
 
 ![project1：舵机 + 两个 LED](docs/images/project1.png)
 
@@ -76,6 +83,8 @@ examples/project1     完整固件 + 虚拟场景 + virtual.blend
 examples/project2     project1 + 自定义虚拟包（可点击 LED）
 examples/ultrasonic   通用超声波驱动 + 有效距离标尺仿真
 examples/servo-arm    舵机长杆遮挡超声波 -> LED
+examples/stepper-car  四轮步进小车 + 超声波避墙
+packages/stepper-*-1.0.0/ 通用 STEP/DIR 步进驱动（MIT）
 blender_addon/        Blender 插件（模型列表、拖入、摩擦/质量、自定义包、导出）
 packages/ultrasonic-*-1.0.0/ 通用超声驱动包源码（MIT）
 tools/                生成示例场景/Blender 文件、模拟调试服务、打包插件
@@ -86,6 +95,7 @@ docs/spec/            virtual.json / device.json / virtual.gd / 自定义虚拟�
 ## 操作
 
 - **WASD** 水平平移，**Q/E** 升降，**方向键** 旋转视角。
+- 顶部“重置”按钮：重新加载 3D 场景、设备和标尺。
 - 左侧半透明工具栏：
   - **选择**（V）：鼠标指向注册了交互的设备时高亮，左键触发交互。
   - **标尺**（M）：左键第一次设起点、第二次设终点；右键删除鼠标附近的标尺。
@@ -182,7 +192,7 @@ tests/run_blender_addon_test.sh    # 无头测试
 
 已完成：欢迎页/最近项目、GLB 加载、按物体摩擦、包解析、外部脚本缓存加载、
 调试会话探测、SSE 输出流与重连、输入写回、gpio/pwm 真实设备包、
-PWM 调试插件、Blender 插件、自定义包运行时覆盖、四个完整示例工程、
+PWM 调试插件、Blender 插件、自定义包运行时覆盖、五个完整示例工程、
 相机控制、选择/标尺工具、场景读取与外部脚本标尺 API、Logo 启动画面。
 
 未完成：HUD 通道控件、骨骼动画碰撞、正式打包发布、

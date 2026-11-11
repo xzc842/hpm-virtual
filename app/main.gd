@@ -193,6 +193,12 @@ func _build_hud(root: Control) -> void:
 	_status_label.add_theme_color_override("font_color", Color(0.72, 0.8, 0.9))
 	top_bar.add_child(_status_label)
 
+	var reset_button := Button.new()
+	reset_button.text = "重置"
+	reset_button.tooltip_text = "重置 3D 场景、设备和标尺"
+	reset_button.pressed.connect(_reset_sim)
+	top_bar.add_child(reset_button)
+
 	var back_button := Button.new()
 	back_button.text = "返回"
 	back_button.pressed.connect(_close_project)
@@ -385,6 +391,12 @@ func _enter_sim() -> void:
 	_welcome.visible = false
 	_hud.visible = true
 	_on_bridge_state(Bridge.get_service_state())
+
+func _reset_sim() -> void:
+	if not App.is_open():
+		return
+	_enter_sim()
+	_set_status("场景已重置")
 
 func _close_project() -> void:
 	_free_sim()

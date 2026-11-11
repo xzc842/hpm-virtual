@@ -1,0 +1,35 @@
+{
+  "devices": {
+    "sonar": {
+      "config": {
+        "effective_distance": "50",
+        "loops_per_cm": "42",
+        "max_distance": "400"
+      },
+      "driver": "ultrasonic",
+      "echo": "P1_3",
+      "trig": "P1_2"
+    },
+    "stepper_fl": {
+      "dir": "P1_1",
+      "driver": "stepper",
+      "step": "P1_0"
+    },
+    "stepper_fr": {
+      "dir": "P1_5",
+      "driver": "stepper",
+      "step": "P1_4"
+    },
+    "stepper_rl": {
+      "dir": "P1_7",
+      "driver": "stepper",
+      "step": "P1_6"
+    },
+    "stepper_rr": {
+      "dir": "P3_3",
+      "driver": "stepper",
+      "step": "P3_2"
+    }
+  },
+  "mcu": "stc90c51"
+}

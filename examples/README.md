@@ -8,6 +8,7 @@
 | `project2` | 与 project1 相同 | 同 project1 | `led2` 覆盖为 `clickable-led`：点击切换红/蓝 |
 | `ultrasonic` | 通用超声驱动 | 传感器 + 可移动目标 | `target_distance` 输入 → 射线测量 → 标尺 |
 | `servo-arm` | 舵机 + 长杆 + 超声 + LED | 舵机、右侧超声、LED | 长杆扫到右侧遮挡超声 → 实测 `<= 10 cm` → LED 亮 |
+| `stepper-car` | 4× STEP/DIR 步进电机 + 超声 | 四轮小车 + 墙 | 靠近墙 → 后退 → 转弯 → 前进 |
 
 ## 构建
 
@@ -31,6 +32,7 @@ godot --path . -- --project=examples/project1
 godot --path . -- --project=examples/project2
 godot --path . -- --project=examples/ultrasonic
 godot --path . -- --project=examples/servo-arm
+godot --path . -- --project=examples/stepper-car
 ```
 
 ## Blender
@@ -80,6 +82,19 @@ hpm build
 
 ```bash
 cd examples/servo-arm
+hpm sync --offline
+hpm build
+./run.sh
+```
+
+## stepper-car
+
+- 四个 `stepper-*` 电机，每台 STEP/DIR 两个引脚。
+- 主循环轮询车头超声波；距离 `< 35 cm` 时先后退 80 步，再左右差速转弯 100 步，然后小步前进。
+- `car-controller` 根据四个轮子的累计角度做差速运动，移动 `Car` 节点。
+
+```bash
+cd examples/stepper-car
 hpm sync --offline
 hpm build
 ./run.sh

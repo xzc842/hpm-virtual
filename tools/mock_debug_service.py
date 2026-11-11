@@ -42,7 +42,11 @@ def build_devices():
             "title": "LED",
             "values": {"power": False},
         },
-        "sonar": {
+        "stepper_fl": {"driver": "stepper", "config": {}, "title": "左前轮", "values": {"angle": 0.0, "direction": 1}},
+    "stepper_fr": {"driver": "stepper", "config": {}, "title": "右前轮", "values": {"angle": 0.0, "direction": 1}},
+    "stepper_rl": {"driver": "stepper", "config": {}, "title": "左后轮", "values": {"angle": 0.0, "direction": 1}},
+    "stepper_rr": {"driver": "stepper", "config": {}, "title": "右后轮", "values": {"angle": 0.0, "direction": 1}},
+    "sonar": {
         "driver": "ultrasonic",
         "config": {"effective_distance": "30", "max_distance": "400"},
         "title": "超声波测距",
@@ -185,6 +189,7 @@ class Handler(BaseHTTPRequestHandler):
         next_blink = time.time() + 0.5
         next_servo = time.time() + 1.5
         next_sonar = time.time() + 0.6
+        next_stepper = time.time() + 0.2
         sonar_step = 0
         input_cursor = len(INPUTS)
         next_ping = time.time() + 0.5
@@ -207,6 +212,12 @@ class Handler(BaseHTTPRequestHandler):
                 cursor += 1
                 self._event(cursor, "servo", dict(states["servo"]))
                 next_servo = now + 1.5
+            if all(n in states for n in ("stepper_fl", "stepper_fr", "stepper_rl", "stepper_rr")) and now >= next_stepper:
+                for n in ("stepper_fl", "stepper_fr", "stepper_rl", "stepper_rr"):
+                    states[n]["angle"] = float(states[n].get("angle", 0.0)) + 2.0
+                    cursor += 1
+                    self._event(cursor, n, dict(states[n]))
+                next_stepper = now + 0.2
             if "sonar" in states and now >= next_sonar:
                 sonar_step = (sonar_step + 1) % 10
                 if sonar_step < 2:

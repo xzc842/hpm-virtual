@@ -1,0 +1,19 @@
+{
+  "name": "stepper",
+  "display_name": "步进电机",
+  "version": "1.0.0",
+  "model": "device.gltf",
+  "script": "virtual.gd",
+  "physics": {"friction": 0.7, "mass": 0.12, "rough": true},
+  "objects": [
+    {"node": "Tire", "physics": {"friction": 0.9, "mass": 0.08, "rough": true}},
+    {"node": "Hub", "physics": {"friction": 0.5, "mass": 0.04, "rough": true}}
+  ],
+  "config": {
+    "step_angle": {"type": "number", "title": "步距角", "default": 1.8, "unit": "deg"}
+  },
+  "channels": {
+    "angle": {"title": "角度", "type": "number", "widget": "value", "unit": "deg", "readonly": true},
+    "direction": {"title": "方向", "type": "number", "widget": "value", "readonly": true}
+  }
+}

@@ -130,6 +130,51 @@ static func _build_body(mesh: MeshInstance3D, physics: Dictionary, default_frict
 	mesh.set_meta("hpm_physics_built", true)
 	return true
 
+## 为小车底盘创建单个 RigidBody3D；每个网格生成碰撞盒（轮子自身接地，底盘盒不贴地）。
+static func build_rigid(root: Node3D, physics: Dictionary) -> RigidBody3D:
+	if root == null:
+		return null
+	var meshes: Array[MeshInstance3D] = []
+	var boxes: Array[AABB] = []
+	var total := AABB()
+	var first := true
+	for node in root.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if mesh.mesh == null:
+			continue
+		var mesh_box := mesh.global_transform * mesh.get_aabb()
+		meshes.append(mesh)
+		boxes.append(mesh_box)
+		if first:
+			total = mesh_box
+			first = false
+		else:
+			total = total.merge(mesh_box)
+	if not total.has_volume():
+		return null
+	var body := RigidBody3D.new()
+	body.name = "HPMRigidBody"
+	body.mass = clampf(float(physics.get("mass", 1.0)), 0.001, 100000.0)
+	body.physics_material_override = make_material(physics, 0.8)
+	body.continuous_cd = true
+	body.collision_layer = 1
+	body.collision_mask = 1
+	body.set_meta("hpm_mass", body.mass)
+	body.set_meta("hpm_physics", physics.duplicate(true))
+	root.add_child(body)
+	body.top_level = true
+	body.global_position = total.get_center()
+	for i in range(meshes.size()):
+		var mesh_box := boxes[i]
+		var collision := CollisionShape3D.new()
+		collision.name = "Shape_" + String(meshes[i].name).validate_node_name()
+		var shape := BoxShape3D.new()
+		shape.size = mesh_box.size
+		collision.shape = shape
+		collision.position = mesh_box.get_center() - body.global_position
+		body.add_child(collision)
+	return body
+
 static func get_mass(body: StaticBody3D) -> float:
 	if body == null:
 		return 0.0

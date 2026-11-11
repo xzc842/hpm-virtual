@@ -37,6 +37,7 @@ static void delay_10us(void) {
 int HPM_FN(init)(void) {
     HPM_CALL(trig, init)();
     HPM_CALL(echo, init)();
+    HPM_CALL(echo, write)(0);
     HPM_CALL(trig, write)(0);
     return 0;
 }
@@ -51,7 +52,7 @@ void HPM_FN(trigger)(void) {
 int HPM_FN(read_cm)(void) {
     HPM_FN(trigger)();
 
-    unsigned long timeout = 60000UL;
+    unsigned long timeout = 2000UL;
     while (!HPM_CALL(echo, read)() && --timeout) {
     }
     if (!timeout) return 400;

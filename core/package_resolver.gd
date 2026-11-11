@@ -305,6 +305,8 @@ func _first_existing(paths: Array) -> String:
 func _chip_matches(pkg: Dictionary, chip: String) -> bool:
 	var manifest: Dictionary = pkg["manifest"]
 	var declared := String(manifest.get("chip", ""))
+	if declared == "*":
+		return true
 	if not declared.is_empty():
 		return declared == chip
 	# 很多设备包 manifest 没写 chip，用目录名兜底（如 usb_cdc-ch552g-1.0.0）。

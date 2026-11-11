@@ -28,6 +28,7 @@ res://
   examples/project2/    # project1 + clickable-led 自定义包
   examples/ultrasonic/  # 通用 ultrasonic-* 驱动 + 有效距离标尺
   examples/servo-arm/   # 舵机长杆扫过超声 -> 实测距离 -> LED
+  examples/stepper-car/ # 四轮步进小车 + 超声波避墙
   packages/ultrasonic-*-1.0.0/ # 通用超声驱动包源码（MIT）
   tools/build_example_scenes.gd # 生成示例 virtual.glb / 自定义包模型
   tools/build_example_blends.py # 生成四个 virtual.blend
@@ -41,6 +42,7 @@ res://
   tests/config_test.gd         # 8 项 config 类型/优先级检查
   tests/ultrasonic_scene_test.gd # 超声 3D 测量/标尺检查
   tests/servo_arm_test.gd       # 舵机长杆遮挡超声检查
+  tests/run_stepper_car_build.sh # 四轮步进小车固件构建
   tests/ultrasonic_plugin_test.c # 超声 debug 输入/回写单测
   tests/ruler_input_test.tscn  # 标尺射线取点/右键删除
   tests/interaction_test.tscn  # 交互注册/悬停高亮/触发
@@ -60,6 +62,7 @@ godot --path . -- --project=examples/project1
 godot --path . -- --project=examples/project2
 godot --path . -- --project=examples/ultrasonic
 godot --path . -- --project=examples/servo-arm
+godot --path . -- --project=examples/stepper-car
 # 测试
 godot --headless --path . --script res://tests/smoke_test.gd
 godot --headless --path . --script res://tests/real_packages_test.gd
@@ -118,7 +121,7 @@ virtual/virtual.glb ───────────────┘
 - [x] 真实设备包：gpio(LED) 与 pwm(舵机) 的 `device.json`、`device.gltf`、`virtual.gd` 安装进包。
 - [x] pwm 的 `debug.c`：监听 PWM 引脚，高电平占空比 5%–10% 映射到 0–180°。
 - [x] 模型节点按设备类型加前缀（`LedBody`、`ServoHorn`），避免 GLB 内重名重命名。
-- [x] 四个示例工程、包测试、PWM 插件单元测试、截图验证。
+- [x] 五个示例工程、包测试、PWM 插件单元测试、截图验证。
 - [x] 自定义虚拟包运行时解析（`override` 字符串/对象/路径、项目内 `virtual/packages`）。
 - [x] Blender 插件：模型列表、模态拖入、“编辑”弹窗（开关 + 文件夹路径）、按物体摩擦、导出。
 - [x] 自定义包只影响新拖入的实例；场景里已有实例保持各自的 `hpm_override`。
@@ -131,6 +134,7 @@ virtual/virtual.glb ───────────────┘
 - [x] 通用超声波驱动包 `ultrasonic-*`（MIT）：driver/debug/device.json/virtual.gd/device.gltf；
   debug 注册 `target_distance` 输入，3D 脚本射线测量后把 `distance` 写回，`< effective_distance` 更新标尺。
 - [x] servo-arm：舵机长杆扫过右侧超声；超声 `auto_measure` 射线测量，固件读 `sonar_read_cm()`，实测 `<= 10 cm` 时点亮 LED。
+- [x] stepper-car：STEP/DIR 通用步进驱动、四轮差速底盘控制器；靠近墙后先后退、转弯、再前进。
 - [x] 相机 WASD/QE/方向键控制 + 状态栏提示。
 - [x] 选择/标尺工具栏、射线高亮与交互触发、透明蓝色标尺（m/cm 自适应、多条、右键删除）。
 - [x] 外部脚本 API：`register_interaction()`、`draw_ruler()`、`get_scene_root()`。
