@@ -105,8 +105,6 @@ func _on_tick(delta: float) -> void:
 	_car.global_position = _body.global_position - _visual_offset
 	_car.global_rotation = _body.global_rotation
 	if accumulated < 0.01:
-		# 固件没有发 STEP 时清掉残余平面速度，避免小车贴墙一点点爬。
-		_body.linear_velocity = Vector3(0.0, _body.linear_velocity.y, 0.0)
 		return
 
 	var forward := _body.global_transform.basis.z.normalized()
@@ -122,10 +120,6 @@ func _on_tick(delta: float) -> void:
 		float(angle_dirs["stepper_rl"]),
 		float(angle_dirs["stepper_rr"]),
 	]
-	if absf(float(dirs[0])) < 0.5:
-		dirs[0] = float(fl.get_direction())
-	if absf(float(dirs[1])) < 0.5:
-		dirs[1] = float(fr.get_direction())
 	var left_drive := (float(dirs[0]) + float(dirs[2])) * 0.5
 	var right_drive := (float(dirs[1]) + float(dirs[3])) * 0.5
 	var turn := right_drive - left_drive
@@ -136,7 +130,5 @@ func _on_tick(delta: float) -> void:
 	var target_speed := clampf(wheel_speed, -1.4, 1.4)
 	var current_speed := _body.linear_velocity.dot(forward)
 	var force := clampf((target_speed - current_speed) * _body.mass * 40.0, -80.0, 80.0)
-	if absf(force) < 20.0:
-		force = 20.0 * signf(target_speed - current_speed)
 	for i in range(4):
 		_body.apply_force(forward * (absf(force) * 0.25) * float(dirs[i]), positions[i])

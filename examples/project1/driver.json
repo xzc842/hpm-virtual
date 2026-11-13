@@ -2,12 +2,12 @@
   "intermediate_devices": {},
   "user_devices": {
     "led1": {
-      "driver": "gpio-*",
+      "driver": "gpio-stc90c51",
       "pin": "P1_1",
       "version": "1.0.0"
     },
     "led2": {
-      "driver": "gpio-*",
+      "driver": "gpio-stc90c51",
       "pin": "P1_2",
       "version": "1.0.0"
     },
