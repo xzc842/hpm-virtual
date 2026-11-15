@@ -35,12 +35,17 @@ var _ruler_count := 0
 var _updating_tool_ui := false
 var _file_dialog: FileDialog
 var _missing_dialog: ConfirmationDialog
+var _settings_dialog: AcceptDialog
+var _language_option: OptionButton
+var _mouse_option: OptionButton
+var _i18n_nodes: Array = []
 var _sim: SimView
 
 func _ready() -> void:
 	get_window().title = WINDOW_TITLE
 	_theme = _make_theme()
 	_build_ui()
+	I18n.language_changed.connect(_refresh_i18n)
 	_connect_signals()
 	_refresh_recent()
 	_handle_command_line()
@@ -87,6 +92,40 @@ func _build_ui() -> void:
 	_build_hud(root)
 	_build_file_dialog()
 	_build_missing_dialog()
+	_build_settings_dialog()
+
+func _bind_text(control: Control, key: String) -> void:
+	_i18n_nodes.append([control, key])
+	control.text = I18n.t(key)
+
+func _refresh_i18n() -> void:
+	for item in _i18n_nodes:
+		var control: Control = item[0]
+		control.text = I18n.t(String(item[1]))
+	for tool: String in _tool_buttons:
+		var button: Button = _tool_buttons[tool]
+		button.text = I18n.t("tool." + tool)
+		button.tooltip_text = I18n.t("tool.tip", [_tool_shortcut(tool)])
+	_file_dialog.title = I18n.t("dialog.open.title")
+	_missing_dialog.title = I18n.t("dialog.missing.title")
+	_missing_dialog.dialog_text = I18n.t("dialog.missing.text")
+	_missing_dialog.ok_button_text = I18n.t("dialog.missing.ok")
+	_missing_dialog.cancel_button_text = I18n.t("dialog.missing.cancel")
+	_missing_dialog.add_button(I18n.t("dialog.missing.blender"), true, "blender")
+	_settings_dialog.title = I18n.t("settings.title")
+	_settings_dialog.ok_button_text = I18n.t("settings.close")
+	if App.is_open():
+		_project_label.text = I18n.t("hud.project", [App.root_dir.get_file(), String(App.project_json.get("mcu", ""))])
+	if _language_option != null:
+		_language_option.set_item_text(0, "中文")
+		_language_option.set_item_text(1, "English")
+	if _mouse_option != null:
+		_mouse_option.set_item_text(0, I18n.t("settings.mouse.left"))
+		_mouse_option.set_item_text(1, I18n.t("settings.mouse.right"))
+	_refresh_hint()
+
+func _tool_shortcut(tool: String) -> String:
+	return "V" if tool == "select" else "M"
 
 func _build_welcome(root: Control) -> void:
 	_welcome = Control.new()
@@ -138,20 +177,29 @@ func _build_welcome(root: Control) -> void:
 	box.add_child(copyright)
 
 	var subtitle := Label.new()
-	subtitle.text = "打开一个 HPM 工程，加载 virtual 场景并连接调试器。"
+	_bind_text(subtitle, "welcome.subtitle")
 	subtitle.add_theme_color_override("font_color", Color(0.66, 0.72, 0.8))
 	box.add_child(subtitle)
 
 	box.add_child(HSeparator.new())
 
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 8)
+	box.add_child(actions)
 	var open_button := Button.new()
-	open_button.text = "打开项目…"
+	_bind_text(open_button, "welcome.open")
 	open_button.custom_minimum_size = Vector2(0, 44)
+	open_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	open_button.pressed.connect(_show_open_dialog)
-	box.add_child(open_button)
+	actions.add_child(open_button)
+	var settings_button := Button.new()
+	_bind_text(settings_button, "welcome.settings")
+	settings_button.custom_minimum_size = Vector2(100, 44)
+	settings_button.pressed.connect(_show_settings)
+	actions.add_child(settings_button)
 
 	var recent_caption := Label.new()
-	recent_caption.text = "最近项目"
+	_bind_text(recent_caption, "welcome.recent")
 	recent_caption.add_theme_color_override("font_color", Color(0.6, 0.66, 0.74))
 	box.add_child(recent_caption)
 
@@ -189,7 +237,7 @@ func _build_hud(root: Control) -> void:
 	top_margin.add_child(top_bar)
 
 	_project_label = Label.new()
-	_project_label.text = "未打开项目"
+	_bind_text(_project_label, "status.no_project")
 	top_bar.add_child(_project_label)
 
 	_status_label = Label.new()
@@ -198,14 +246,19 @@ func _build_hud(root: Control) -> void:
 	_status_label.add_theme_color_override("font_color", Color(0.72, 0.8, 0.9))
 	top_bar.add_child(_status_label)
 
+	var settings_button := Button.new()
+	_bind_text(settings_button, "welcome.settings")
+	settings_button.pressed.connect(_show_settings)
+	top_bar.add_child(settings_button)
+
 	var reset_button := Button.new()
-	reset_button.text = "重置"
-	reset_button.tooltip_text = "重置 3D 场景、设备和标尺"
+	_bind_text(reset_button, "hud.reset")
+	reset_button.tooltip_text = I18n.t("hud.reset.tip")
 	reset_button.pressed.connect(_reset_sim)
 	top_bar.add_child(reset_button)
 
 	var back_button := Button.new()
-	back_button.text = "返回"
+	_bind_text(back_button, "hud.back")
 	back_button.pressed.connect(_close_project)
 	top_bar.add_child(back_button)
 
@@ -272,15 +325,15 @@ func _build_toolbar() -> void:
 	margin.add_child(box)
 
 	var title := Label.new()
-	title.text = "工具"
+	_bind_text(title, "tools.title")
 	title.add_theme_color_override("font_color", Color(0.75, 0.82, 0.9))
 	box.add_child(title)
 
 	var group := ButtonGroup.new()
 	for entry in [["select", "选择", "V"], ["ruler", "标尺", "M"]]:
 		var button := Button.new()
-		button.text = entry[1]
-		button.tooltip_text = "快捷键 " + entry[2]
+		button.text = I18n.t("tool." + String(entry[0]))
+		button.tooltip_text = I18n.t("tool.tip", [String(entry[2])])
 		button.toggle_mode = true
 		button.button_group = group
 		button.custom_minimum_size = Vector2(0, 36)
@@ -330,7 +383,7 @@ func _panel_style(alpha: float) -> StyleBoxFlat:
 
 func _build_file_dialog() -> void:
 	_file_dialog = FileDialog.new()
-	_file_dialog.title = "选择 HPM 项目目录"
+	_file_dialog.title = I18n.t("dialog.open.title")
 	_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_DIR
 	_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	_file_dialog.size = Vector2i(900, 600)
@@ -340,14 +393,56 @@ func _build_file_dialog() -> void:
 
 func _build_missing_dialog() -> void:
 	_missing_dialog = ConfirmationDialog.new()
-	_missing_dialog.title = "缺少虚拟环境"
-	_missing_dialog.dialog_text = "该项目没有 virtual/virtual.json。\n\n可以用 Blender + hpm-virtual 插件创建虚拟环境；也可以先进入占位环境（一块地板），之后再重新打开项目。"
-	_missing_dialog.ok_button_text = "使用占位环境"
-	_missing_dialog.cancel_button_text = "取消"
-	_missing_dialog.add_button("用 Blender 创建", true, "blender")
+	_missing_dialog.title = I18n.t("dialog.missing.title")
+	_missing_dialog.dialog_text = I18n.t("dialog.missing.text")
+	_missing_dialog.ok_button_text = I18n.t("dialog.missing.ok")
+	_missing_dialog.cancel_button_text = I18n.t("dialog.missing.cancel")
 	_missing_dialog.confirmed.connect(_enter_sim)
 	_missing_dialog.custom_action.connect(_on_missing_custom_action)
 	add_child(_missing_dialog)
+
+func _build_settings_dialog() -> void:
+	_settings_dialog = AcceptDialog.new()
+	_settings_dialog.title = I18n.t("settings.title")
+	_settings_dialog.ok_button_text = I18n.t("settings.close")
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 14)
+	box.custom_minimum_size = Vector2(520, 0)
+	_settings_dialog.add_child(box)
+
+	var language_label := Label.new()
+	_bind_text(language_label, "settings.language")
+	box.add_child(language_label)
+	_language_option = OptionButton.new()
+	_language_option.add_item("中文", 0)
+	_language_option.add_item("English", 1)
+	_language_option.selected = 0 if I18n.language == "zh" else 1
+	_language_option.item_selected.connect(_on_language_selected)
+	box.add_child(_language_option)
+
+	var mouse_label := Label.new()
+	_bind_text(mouse_label, "settings.mouse")
+	box.add_child(mouse_label)
+	_mouse_option = OptionButton.new()
+	_mouse_option.add_item(I18n.t("settings.mouse.left"), 0)
+	_mouse_option.add_item(I18n.t("settings.mouse.right"), 1)
+	_mouse_option.selected = 1 if I18n.mouse_swap else 0
+	_mouse_option.item_selected.connect(_on_mouse_selected)
+	box.add_child(_mouse_option)
+	add_child(_settings_dialog)
+
+func _show_settings() -> void:
+	_language_option.selected = 0 if I18n.language == "zh" else 1
+	_mouse_option.selected = 1 if I18n.mouse_swap else 0
+	_settings_dialog.popup_centered()
+
+func _on_language_selected(index: int) -> void:
+	I18n.set_language("zh" if index == 0 else "en")
+	_refresh_i18n()
+
+func _on_mouse_selected(index: int) -> void:
+	I18n.set_mouse_swap(index == 1)
+	_refresh_hint()
 
 func _on_missing_custom_action(action: StringName) -> void:
 	if action == &"blender":
@@ -364,10 +459,10 @@ func _on_directory_selected(dir: String) -> void:
 # ---------------------------------------------------------------- 项目流程
 
 func _open_project(dir: String) -> void:
-	_welcome_status.text = "正在打开 %s …" % dir
+	_welcome_status.text = I18n.t("status.opening", [dir])
 	var result := App.open_project(dir)
 	if not bool(result.get("ok", false)):
-		_welcome_status.text = String(result.get("error", "打开失败"))
+		_welcome_status.text = String(result.get("error", I18n.t("status.open_failed")))
 		return
 	Bridge.set_project_dir(App.root_dir)
 	_welcome_status.text = ""
@@ -401,7 +496,7 @@ func _reset_sim() -> void:
 	if not App.is_open():
 		return
 	_enter_sim()
-	_set_status("场景已重置")
+	_set_status(I18n.t("status.reset"))
 
 func _close_project() -> void:
 	_free_sim()
@@ -431,9 +526,9 @@ func _launch_blender() -> void:
 		args.append("--factory-startup")
 	var pid := OS.create_process("blender", args)
 	if pid > 0:
-		_set_status("已启动 Blender；创建 virtual 场景后返回并重新打开项目")
+		_set_status(I18n.t("status.blender_started"))
 	else:
-		_set_status("无法启动 blender，请确认它已安装并在 PATH 中")
+		_set_status(I18n.t("status.blender_failed"))
 
 func _refresh_recent() -> void:
 	if _recent_box == null:
@@ -442,7 +537,7 @@ func _refresh_recent() -> void:
 		child.queue_free()
 	if App.recent.is_empty():
 		var empty := Label.new()
-		empty.text = "暂无最近项目"
+		empty.text = I18n.t("welcome.recent_empty")
 		empty.add_theme_color_override("font_color", Color(0.5, 0.55, 0.62))
 		_recent_box.add_child(empty)
 		return
@@ -463,38 +558,38 @@ func _connect_signals() -> void:
 	Bridge.session_changed.connect(_on_session_changed)
 	Bridge.devices_changed.connect(_on_devices_changed)
 	Bridge.input_failed.connect(func(_payload: Dictionary, message: String) -> void:
-		_set_status("输入发送失败：" + message)
+		_set_status(I18n.t("status.input_failed", [message]))
 	)
 	_on_bridge_state(Bridge.get_service_state())
 
 func _on_bridge_state(state: String) -> void:
 	match state:
 		"offline":
-			_set_status("调试服务未连接（127.0.0.1:17321）")
+			_set_status(I18n.t("status.service_offline"))
 		"idle":
-			_set_status("已连接调试服务，等待开始调试…")
+			_set_status(I18n.t("status.connected_wait"))
 		"running":
-			_set_status("调试运行中，输出流连接中…")
+			_set_status(I18n.t("status.connecting_stream"))
 		"other_project":
-			_set_status("调试器正在调试其它项目")
+			_set_status(I18n.t("status.other_project"))
 		_:
-			_set_status("调试状态：" + state)
+			_set_status(I18n.t("status.unknown", [state]))
 
 func _on_stream_changed(connected: bool, message: String) -> void:
 	if not Bridge.is_active():
 		return
 	if connected:
-		_set_status("调试运行中，输出流已连接")
+		_set_status(I18n.t("status.stream_connected"))
 	elif message.is_empty():
-		_set_status("调试运行中，输出流已断开")
+		_set_status(I18n.t("status.stream_disconnected"))
 	else:
-		_set_status("输出流重连中：" + message)
+		_set_status(I18n.t("status.stream_reconnecting", [message]))
 
 func _on_session_changed(active: bool) -> void:
 	if active:
-		_set_status("调试已开始，等待设备输出…")
+		_set_status(I18n.t("status.session_started"))
 	else:
-		_set_status("调试会话已结束")
+		_set_status(I18n.t("status.session_ended"))
 
 func _on_devices_changed(devices: Array) -> void:
 	if _sim == null:
@@ -504,17 +599,17 @@ func _on_devices_changed(devices: Array) -> void:
 		if typeof(item) == TYPE_DICTIONARY:
 			names.append(String(item.get("name", item.get("device", ""))))
 	if not names.is_empty() and _debug_label != null:
-		_debug_label.text = "调试设备：" + ", ".join(names)
+		_debug_label.text = I18n.t("hud.debug_devices", [", ".join(names)])
 
 func _on_binding_report(report: Dictionary) -> void:
 	var bound: Array = report.get("bound", [])
 	var errors: Array = report.get("errors", [])
 	var lines := PackedStringArray()
-	lines.append("场景：%s · 已绑定设备 %d 个" % [
-		"占位环境" if bool(report.get("placeholder", false)) else "virtual.glb",
+	lines.append(I18n.t("hud.scene", [
+		I18n.t("hud.placeholder") if bool(report.get("placeholder", false)) else "virtual.glb",
 		bound.size(),
-	])
-	lines.append("摩擦碰撞体：%d" % int(report.get("physics_bodies", 0)))
+	]))
+	lines.append(I18n.t("hud.physics", [int(report.get("physics_bodies", 0))]))
 	if not errors.is_empty():
 		lines.append("")
 		for error: Variant in errors:
@@ -549,11 +644,12 @@ func _on_interaction_hover_changed(device_name: String, hint: String) -> void:
 	if device_name.is_empty():
 		_hover_hint = ""
 	else:
-		_hover_hint = "设备 %s：%s · 左键交互" % [device_name, hint]
+		var action := I18n.t("interact.right" if I18n.mouse_swap else "interact.left")
+		_hover_hint = I18n.t("hint.hover", [device_name, hint, action])
 	_refresh_hint()
 
 func _on_interaction_triggered(device_name: String) -> void:
-	_hover_hint = "已触发 %s 的交互" % device_name
+	_hover_hint = I18n.t("hint.triggered", [device_name])
 	_refresh_hint()
 
 func _on_ruler_count_changed(count: int) -> void:
@@ -564,15 +660,16 @@ func _refresh_hint() -> void:
 	if _hint_label == null:
 		return
 	var lines := PackedStringArray()
-	lines.append("WASD 平移 · Q/E 升降 · 方向键旋转 · 选择模式右键拖动旋转视角")
+	lines.append(I18n.t("hint.camera.swap" if I18n.mouse_swap else "hint.camera"))
 	if not _hover_hint.is_empty():
 		lines.append(_hover_hint)
 	elif _current_tool == "ruler":
-		lines.append("标尺模式：左键取起点/终点 · 右键删除鼠标附近的标尺")
+		lines.append(I18n.t("hint.ruler"))
 	else:
-		lines.append("选择模式：指向可交互设备高亮 · 左键触发")
+		var action := I18n.t("interact.right" if I18n.mouse_swap else "interact.left")
+		lines.append(I18n.t("hint.select", [action]))
 	if _ruler_count > 0:
-		lines.append("标尺数量：%d" % _ruler_count)
+		lines.append(I18n.t("hint.ruler.count", [_ruler_count]))
 	_hint_label.text = "\n".join(lines)
 
 func _unhandled_input(event: InputEvent) -> void:

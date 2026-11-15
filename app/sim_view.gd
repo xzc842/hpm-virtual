@@ -431,7 +431,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton:
 		var mouse_button := event as InputEventMouseButton
-		if mouse_button.button_index == MOUSE_BUTTON_RIGHT:
+		if mouse_button.button_index == I18n.camera_button():
 			if mouse_button.pressed and not _mouse_over_ui():
 				_right_dragging = true
 				_right_last_pos = get_viewport().get_mouse_position()
@@ -441,7 +441,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 			get_viewport().set_input_as_handled()
 			return
-		if mouse_button.button_index == MOUSE_BUTTON_LEFT and mouse_button.pressed:
+		if mouse_button.button_index == I18n.interact_button() and mouse_button.pressed:
 			var mouse := mouse_button
 			if _mouse_over_ui():
 				return

@@ -20,6 +20,7 @@ config/icon="res://logo.png"
 
 [autoload]
 
+I18n="*res://core/i18n.gd"
 App="*res://core/project_context.gd"
 Bridge="*res://core/debug_service.gd"
 
