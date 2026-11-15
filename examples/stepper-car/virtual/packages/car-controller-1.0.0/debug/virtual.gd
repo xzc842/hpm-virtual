@@ -23,7 +23,7 @@
 # 四轮车辆：STEP/DIR 控制 VehicleWheel3D 的驱动力，轮胎与地面摩擦推动车身。
 extends "res://sdk/virtual_device.gd"
 
-const WHEELS := ["stepper_fl", "stepper_fr", "stepper_rl", "stepper_rr"]
+var _wheel_names: Array[String] = []
 const WHEEL_NODES := ["WheelFL", "WheelFR", "WheelRL", "WheelRR"]
 const MAX_ENGINE_FORCE := 10.0
 
@@ -52,7 +52,16 @@ func _on_bind(_ctx: Dictionary) -> void:
 		var wheel := _vehicle.get_node_or_null(name) as VehicleWheel3D
 		if wheel != null:
 			_wheels.append(wheel)
-	for name: String in WHEELS:
+	_wheel_names = [
+		String(get_config("wheel_fl", "")),
+		String(get_config("wheel_fr", "")),
+		String(get_config("wheel_rl", "")),
+		String(get_config("wheel_rr", "")),
+	]
+	if _wheel_names.any(func(name: String) -> bool: return name.is_empty()):
+		log_error("car-controller 缺少 wheel_fl/fr/rl/rr 设备名配置")
+		return
+	for name: String in _wheel_names:
 		_last[name] = 0.0
 		_accum[name] = 0.0
 	log_info("车辆底盘已绑定")
@@ -76,7 +85,7 @@ func _on_tick(delta: float) -> void:
 	var scripts: Dictionary = sim_view.get_device_scripts()
 	if scripts.is_empty():
 		return
-	for name: String in WHEELS:
+	for name: String in _wheel_names:
 		var script: VirtualDevice = scripts.get(name, null)
 		if script == null or not script.has_method("get_angle"):
 			return
@@ -88,7 +97,7 @@ func _on_tick(delta: float) -> void:
 		return
 
 	var total := 0.0
-	for name: String in WHEELS:
+	for name: String in _wheel_names:
 		total += absf(float(_accum.get(name, 0.0)))
 	if total < 0.01:
 		_sync_time = 0.0
@@ -99,13 +108,13 @@ func _on_tick(delta: float) -> void:
 		_vehicle.freeze = false
 		_vehicle.sleeping = false
 
-	var fl := float(signf(float(_accum.get("stepper_fl", 0.0))))
-	var fr := float(signf(float(_accum.get("stepper_fr", 0.0))))
-	var rl := float(signf(float(_accum.get("stepper_rl", 0.0))))
-	var rr := float(signf(float(_accum.get("stepper_rr", 0.0))))
-	var left_angle := (float(_accum["stepper_fl"]) + float(_accum["stepper_rl"])) * 0.5
-	var right_angle := (float(_accum["stepper_fr"]) + float(_accum["stepper_rr"])) * 0.5
-	for name: String in WHEELS:
+	var fl := float(signf(float(_accum.get(_wheel_names[0], 0.0))))
+	var fr := float(signf(float(_accum.get(_wheel_names[1], 0.0))))
+	var rl := float(signf(float(_accum.get(_wheel_names[2], 0.0))))
+	var rr := float(signf(float(_accum.get(_wheel_names[3], 0.0))))
+	var left_angle := (float(_accum[_wheel_names[0]]) + float(_accum[_wheel_names[2]])) * 0.5
+	var right_angle := (float(_accum[_wheel_names[1]]) + float(_accum[_wheel_names[3]])) * 0.5
+	for name: String in _wheel_names:
 		_accum[name] = 0.0
 
 	var forward := _vehicle.global_transform.basis.z.normalized()

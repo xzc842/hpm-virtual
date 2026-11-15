@@ -28,6 +28,111 @@ from mathutils import Vector
 from . import data, exporter, scene, state
 
 
+class HPM_OT_add_kv(bpy.types.Operator):
+    bl_idname = "hpm_virtual.add_kv"
+    bl_label = "添加键值"
+    bl_options = {"REGISTER", "UNDO"}
+
+    kind: bpy.props.StringProperty(default="config")
+    virtual_index: bpy.props.IntProperty(default=-1)
+    object_mode: bpy.props.BoolProperty(default=False)
+
+    def execute(self, context):
+        if self.object_mode:
+            owner = context.active_object
+            collection = owner.hpm_config_items if owner else None
+            index_prop = "hpm_config_index"
+        else:
+            items = context.scene.hpm_virtual_devices
+            if not (0 <= self.virtual_index < len(items)):
+                return {"CANCELLED"}
+            owner = items[self.virtual_index]
+            collection = owner.config_items if self.kind == "config" else owner.physics_items
+            index_prop = f"{self.kind}_index"
+        if owner is None or collection is None:
+            return {"CANCELLED"}
+        item = collection.add()
+        item.key = "key"
+        item.value_type = "string"
+        item.value = ""
+        setattr(owner, index_prop, len(collection) - 1)
+        return {"FINISHED"}
+
+
+class HPM_OT_remove_kv(bpy.types.Operator):
+    bl_idname = "hpm_virtual.remove_kv"
+    bl_label = "删除键值"
+    bl_options = {"REGISTER", "UNDO"}
+
+    kind: bpy.props.StringProperty(default="config")
+    virtual_index: bpy.props.IntProperty(default=-1)
+    object_mode: bpy.props.BoolProperty(default=False)
+
+    def execute(self, context):
+        if self.object_mode:
+            owner = context.active_object
+            collection = owner.hpm_config_items if owner else None
+            index_prop = "hpm_config_index"
+        else:
+            items = context.scene.hpm_virtual_devices
+            if not (0 <= self.virtual_index < len(items)):
+                return {"CANCELLED"}
+            owner = items[self.virtual_index]
+            collection = owner.config_items if self.kind == "config" else owner.physics_items
+            index_prop = f"{self.kind}_index"
+        if owner is None or collection is None:
+            return {"CANCELLED"}
+        index = int(getattr(owner, index_prop, 0))
+        if 0 <= index < len(collection):
+            collection.remove(index)
+            setattr(owner, index_prop, max(0, min(index, len(collection) - 1)))
+        return {"FINISHED"}
+
+
+class HPM_OT_add_virtual_device(bpy.types.Operator):
+    bl_idname = "hpm_virtual.add_virtual_device"
+    bl_label = "添加虚拟设备"
+    bl_description = "把当前选中的物体添加为纯虚拟设备"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        obj = context.active_object
+        if obj is None:
+            self.report({"ERROR"}, "请先在场景里选中一个物体")
+            return {"CANCELLED"}
+        name = str(context.scene.hpm_new_virtual_name or obj.name).strip()
+        if not name:
+            name = obj.name
+        if any(item.name == name for item in context.scene.hpm_virtual_devices):
+            self.report({"ERROR"}, f"虚拟设备已存在：{name}")
+            return {"CANCELLED"}
+        item = context.scene.hpm_virtual_devices.add()
+        item.name = name
+        item.object_name = obj.name
+        item.package = ""
+        item.version = "1.0.0"
+        item.config = "{}"
+        item.physics = json.dumps(exporter._physics_dict(obj), ensure_ascii=False)
+        item.override_path = ""
+        context.scene.hpm_virtual_device_index = len(context.scene.hpm_virtual_devices) - 1
+        return {"FINISHED"}
+
+
+class HPM_OT_remove_virtual_device(bpy.types.Operator):
+    bl_idname = "hpm_virtual.remove_virtual_device"
+    bl_label = "删除虚拟设备"
+    bl_description = "从虚拟设备列表移除当前项"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        items = context.scene.hpm_virtual_devices
+        index = context.scene.hpm_virtual_device_index
+        if 0 <= index < len(items):
+            items.remove(index)
+            context.scene.hpm_virtual_device_index = min(index, max(0, len(items) - 1))
+        return {"FINISHED"}
+
+
 class HPM_OT_load_project(bpy.types.Operator):
     bl_idname = "hpm_virtual.load_project"
     bl_label = "加载 HPM 项目"
@@ -64,6 +169,7 @@ class HPM_OT_load_project(bpy.types.Operator):
             self.report({"ERROR"}, str(exc))
             return {"CANCELLED"}
         state.store_project(context, project)
+        state.recover_virtual_devices(context)
         if not auto_opened and not scene.device_roots():
             _import_project_models(context, path, project)
         errors = [entry["name"] for entry in project["devices"] if entry.get("error")]

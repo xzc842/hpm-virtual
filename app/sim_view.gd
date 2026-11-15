@@ -58,6 +58,8 @@ var _hovered_overlays: Dictionary = {}
 var _highlight_material: StandardMaterial3D
 var _camera_yaw := 0.0
 var _camera_pitch := 0.0
+var _right_dragging := false
+var _right_last_pos := Vector2.ZERO
 
 func setup(info: Dictionary) -> void:
 	project_dir = String(info.get("root", ""))
@@ -345,6 +347,7 @@ func _compute_aabb(root: Node3D) -> AABB:
 
 func set_tool(tool: String) -> void:
 	current_tool = tool
+	_right_dragging = false
 	if _ruler_tool != null:
 		_ruler_tool.set_active(tool == "ruler")
 	if tool != "select":
@@ -428,8 +431,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	if current_tool != "select":
 		return
 	if event is InputEventMouseButton:
-		var mouse := event as InputEventMouseButton
-		if mouse.button_index == MOUSE_BUTTON_LEFT and mouse.pressed:
+		var mouse_button := event as InputEventMouseButton
+		if mouse_button.button_index == MOUSE_BUTTON_RIGHT:
+			if mouse_button.pressed and not _mouse_over_ui():
+				_right_dragging = true
+				_right_last_pos = get_viewport().get_mouse_position()
+				Input.set_default_cursor_shape(Input.CURSOR_DRAG)
+			elif not mouse_button.pressed:
+				_right_dragging = false
+				Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+			get_viewport().set_input_as_handled()
+			return
+		if mouse_button.button_index == MOUSE_BUTTON_LEFT and mouse_button.pressed:
+			var mouse := mouse_button
 			if _mouse_over_ui():
 				return
 			_update_hover()
@@ -439,6 +453,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			if script != null and script.trigger_interaction():
 				interaction_triggered.emit(_hovered_name)
 				get_viewport().set_input_as_handled()
+	elif event is InputEventMouseMotion and _right_dragging:
+		var motion := event as InputEventMouseMotion
+		var delta := motion.position - _right_last_pos
+		_right_last_pos = motion.position
+		_camera_yaw = fmod(_camera_yaw + delta.x * 0.25, 360.0)
+		_camera_pitch = clampf(_camera_pitch + delta.y * 0.25, -85.0, 85.0)
+		if _camera != null:
+			_camera.rotation_degrees = Vector3(_camera_pitch, _camera_yaw, 0.0)
+		get_viewport().set_input_as_handled()
 
 func _mouse_over_ui() -> bool:
 	return get_viewport().gui_get_hovered_control() != null

@@ -63,12 +63,11 @@ def _device_objects(entry: dict[str, Any], root: bpy.types.Object) -> dict[str, 
             payload["props"] = props
     except ValueError:
         pass
-    try:
-        config = json.loads(str(scene.get_prop(root, "hpm_config", "") or "{}"))
-        if isinstance(config, dict) and config:
-            payload["config"] = config
-    except ValueError:
-        pass
+    config = _kv_dict(scene.get_prop(root, "hpm_config_items", []))
+    if not config:
+        config = _json_object(str(scene.get_prop(root, "hpm_config", "") or "{}"))
+    if config:
+        payload["config"] = config
 
     override = entry.get("override") or {}
     if override:
@@ -78,6 +77,126 @@ def _device_objects(entry: dict[str, Any], root: bpy.types.Object) -> dict[str, 
         }
     return payload
 
+
+
+
+def _kv_dict(items) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for item in items:
+        key = str(item.key or "").strip()
+        if not key:
+            continue
+        kind = str(item.value_type or "string")
+        raw = str(item.value or "")
+        if kind == "bool":
+            result[key] = raw.strip().lower() in ("1", "true", "yes", "on")
+        elif kind == "int":
+            try:
+                result[key] = int(raw)
+            except ValueError:
+                result[key] = 0
+        elif kind == "float":
+            try:
+                result[key] = float(raw)
+            except ValueError:
+                result[key] = 0.0
+        else:
+            result[key] = raw
+    return result
+
+def _json_object(raw: str) -> dict[str, Any]:
+    try:
+        value = json.loads(raw or "{}")
+    except ValueError:
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def _virtual_payload(item) -> dict[str, Any] | None:
+    obj = bpy.data.objects.get(str(item.object_name or ""))
+    if obj is None:
+        obj = bpy.data.objects.get(str(item.name or ""))
+    if obj is None:
+        return None
+    payload: dict[str, Any] = {
+        "name": str(item.name),
+        "node": _scene_path(obj),
+        "package": str(item.package or ""),
+        "version": str(item.version or "1.0.0"),
+        "objects": _mesh_objects(obj),
+    }
+    config = _kv_dict(item.config_items)
+    if not config:
+        config = _json_object(str(item.config or "{}"))
+    if config:
+        payload["config"] = config
+    physics = _kv_dict(item.physics_items)
+    if not physics:
+        physics = _json_object(str(item.physics or "{}"))
+    if not physics:
+        physics = _physics_dict(obj)
+    payload["physics"] = physics
+    override_path = str(item.override_path or "").strip()
+    if override_path:
+        payload["override"] = {
+            "name": str(item.package or item.name),
+            "version": str(item.version or "1.0.0"),
+            "path": override_path,
+        }
+    return payload
+
+
+def _prepare_virtual_devices(existing: dict[str, Any], exported_names: set[str],
+                             warnings: list[str]) -> list[dict[str, Any]]:
+    """把旧 JSON 的虚拟设备迁移到场景虚拟设备列表，再导出列表。"""
+    scene = bpy.context.scene
+    items = scene.hpm_virtual_devices
+    if not bool(scene.hpm_virtual_list_ready):
+        if isinstance(existing, dict):
+            for old in existing.get("devices", []) or []:
+                if not isinstance(old, dict):
+                    continue
+                name = str(old.get("name", ""))
+                if not name or name in exported_names:
+                    continue
+                if any(entry.name == name for entry in items):
+                    continue
+                leaf = str(old.get("node", "")).rsplit("/", 1)[-1]
+                obj = bpy.data.objects.get(leaf)
+                if obj is None:
+                    continue
+                item = items.add()
+                item.name = name
+                item.object_name = obj.name
+                item.package = str(old.get("package", ""))
+                item.version = str(old.get("version", "1.0.0"))
+                item.config = json.dumps(old.get("config", {}), ensure_ascii=False)
+                item.physics = json.dumps(old.get("physics", {}), ensure_ascii=False)
+                for key, value in (old.get("config", {}) or {}).items():
+                    kv = item.config_items.add()
+                    kv.key = str(key)
+                    kv.value_type = "bool" if isinstance(value, bool) else "int" if isinstance(value, int) else "float" if isinstance(value, float) else "string"
+                    kv.value = str(value).lower() if isinstance(value, bool) else str(value)
+                for key, value in (old.get("physics", {}) or {}).items():
+                    kv = item.physics_items.add()
+                    kv.key = str(key)
+                    kv.value_type = "bool" if isinstance(value, bool) else "int" if isinstance(value, int) else "float" if isinstance(value, float) else "string"
+                    kv.value = str(value).lower() if isinstance(value, bool) else str(value)
+                override = old.get("override") or {}
+                item.override_path = str(override.get("path", ""))
+        scene.hpm_virtual_list_ready = True
+    result: list[dict[str, Any]] = []
+    for item in items:
+        payload = _virtual_payload(item)
+        if payload is None:
+            warnings.append(f"虚拟设备 {item.name} 找不到物体 {item.object_name}")
+            continue
+        if payload["name"] in exported_names:
+            warnings.append(f"虚拟设备 {item.name} 与项目设备重名，已跳过")
+            continue
+        exported_names.add(payload["name"])
+        result.append(payload)
+    return result
 
 def _environment_objects() -> list[dict[str, Any]]:
     result: list[dict[str, Any]] = []
@@ -198,24 +317,9 @@ def export_project(project: dict[str, Any]) -> dict[str, Any]:
         if current.get("override"):
             used_overrides.append((current["override"], current))
 
-    # 保留仅存在于 virtual.json 的虚拟设备（例如 car-controller），
-    # 它们没有对应的 HPM project.json 驱动。
+    # 纯虚拟设备由场景里的虚拟设备列表生成；旧 JSON 的虚拟设备先迁移到列表。
     exported_names = {str(item.get("name", "")) for item in devices}
-    if isinstance(existing, dict):
-        for item in existing.get("devices", []) or []:
-            if not isinstance(item, dict):
-                continue
-            name = str(item.get("name", ""))
-            if name and name not in exported_names:
-                # 虚拟设备的旧 node 可能缺少场景根节点；按对象名重新计算完整路径。
-                old_node = str(item.get("node", ""))
-                leaf = old_node.rsplit("/", 1)[-1]
-                obj = bpy.data.objects.get(leaf)
-                if obj is not None:
-                    item = dict(item)
-                    item["node"] = _scene_path(obj)
-                devices.append(item)
-                exported_names.add(name)
+    devices.extend(_prepare_virtual_devices(existing, exported_names, warnings))
 
     virtual_json = {
         "version": 1,

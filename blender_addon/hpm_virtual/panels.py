@@ -25,6 +25,19 @@ import bpy
 from . import scene, state
 
 
+
+
+class HPM_UL_key_values(bpy.types.UIList):
+    bl_idname = "HPM_UL_key_values"
+
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        row = layout.row(align=True)
+        row.label(text=str(item.key or ""), icon="KEY_HLT")
+        row.label(text=str(item.value_type or ""))
+        row.label(text=str(item.value or ""))
+
+
 class HPM_PT_project(bpy.types.Panel):
     bl_label = "HPM 虚拟项目"
     bl_idname = "HPM_PT_project"
@@ -125,7 +138,8 @@ class HPM_PT_friction(bpy.types.Panel):
         column.prop(obj, "hpm_rough", text="Rough")
         column.prop(obj, "hpm_bounce", text="弹性")
         column.prop(obj, "hpm_physics_enabled", text="启用碰撞")
-        column.prop(obj, "hpm_config", text="设备 config JSON")
+        _draw_kv(column, obj, "hpm_config_items", "hpm_config_index", "config",
+                 object_mode=True)
         layout.label(text="导出时写入 virtual.json 的 objects", icon="INFO")
 
 
@@ -149,3 +163,75 @@ class HPM_PT_packs(bpy.types.Panel):
             row = layout.row()
             row.label(text=f"{pack['name']} {pack['version']}", icon="PACKAGE")
             row.label(text=str(pack.get("target", "")))
+
+
+class HPM_PT_virtual_devices(bpy.types.Panel):
+    bl_label = "虚拟设备"
+    bl_idname = "HPM_PT_virtual_devices"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "HPM"
+    bl_parent_id = "HPM_PT_project"
+
+    def draw(self, context):
+        layout = self.layout
+        scene_data = context.scene
+        row = layout.row()
+        row.template_list(
+            "UI_UL_list", "hpm_virtual_devices",
+            scene_data, "hpm_virtual_devices",
+            scene_data, "hpm_virtual_device_index",
+        )
+        column = row.column(align=True)
+        add = column.operator("hpm_virtual.add_virtual_device", text="", icon="ADD")
+        add = column.operator("hpm_virtual.remove_virtual_device", text="", icon="REMOVE")
+        layout.prop(scene_data, "hpm_new_virtual_name", text="新设备名")
+        items = scene_data.hpm_virtual_devices
+        index = scene_data.hpm_virtual_device_index
+        if not (0 <= index < len(items)):
+            layout.label(text="选中物体后点 + 添加虚拟设备")
+            return
+        item = items[index]
+        box = layout.box()
+        box.prop(item, "name", text="设备名")
+        box.prop(item, "object_name", text="场景物体")
+        box.prop(item, "package", text="包名")
+        box.prop(item, "version", text="版本")
+        box.prop(item, "override_path", text="override 路径")
+        _draw_kv(box, item, "config_items", "config_index", "config",
+                 virtual_index=index)
+        _draw_kv(box, item, "physics_items", "physics_index", "physics",
+                 virtual_index=index)
+
+
+def _draw_kv(layout, owner, collection_name: str, index_name: str,
+             kind: str, virtual_index: int = -1,
+             object_mode: bool = False) -> None:
+    box = layout.box()
+    box.label(text="config" if kind == "config" else "physics")
+    header = box.row(align=True)
+    first = header.split(factor=0.38)
+    first.label(text="键")
+    middle = first.split(factor=0.35)
+    middle.label(text="类型")
+    middle.label(text="值")
+    row = box.row()
+    row.template_list("HPM_UL_key_values", collection_name, owner, collection_name,
+                      owner, index_name)
+    column = row.column(align=True)
+    add = column.operator("hpm_virtual.add_kv", text="", icon="ADD")
+    add.kind = kind
+    add.virtual_index = virtual_index
+    add.object_mode = object_mode
+    remove = column.operator("hpm_virtual.remove_kv", text="", icon="REMOVE")
+    remove.kind = kind
+    remove.virtual_index = virtual_index
+    remove.object_mode = object_mode
+    collection = getattr(owner, collection_name)
+    index = int(getattr(owner, index_name, 0))
+    if 0 <= index < len(collection):
+        item = collection[index]
+        sub = box.row(align=True)
+        sub.prop(item, "key", text="键")
+        sub.prop(item, "value_type", text="")
+        box.prop(item, "value", text="值")

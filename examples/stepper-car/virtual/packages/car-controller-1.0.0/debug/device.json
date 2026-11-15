@@ -35,5 +35,27 @@
         "z": -0.2
       }
     ]
+  },
+  "config": {
+    "wheel_fl": {
+      "type": "string",
+      "title": "左前轮设备名",
+      "default": ""
+    },
+    "wheel_fr": {
+      "type": "string",
+      "title": "右前轮设备名",
+      "default": ""
+    },
+    "wheel_rl": {
+      "type": "string",
+      "title": "左后轮设备名",
+      "default": ""
+    },
+    "wheel_rr": {
+      "type": "string",
+      "title": "右后轮设备名",
+      "default": ""
+    }
   }
 }

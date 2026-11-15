@@ -177,6 +177,44 @@ def main() -> None:
     led2_root = scene.place_device(context, project, entry, location=old_location)
     check(not _override_of(led2_root), "关闭后新拖入恢复默认模型")
 
+    print("[Virtual devices]")
+    root = scene.find_device_root("led1") or scene.find_object("led1")
+    if root is not None:
+        bpy.context.view_layer.objects.active = root
+        root.select_set(True)
+        context.scene.hpm_new_virtual_name = "virtual-test"
+        check(bpy.ops.hpm_virtual.add_virtual_device() == {"FINISHED"},
+              "添加虚拟设备")
+        item = context.scene.hpm_virtual_devices[-1]
+        item.object_name = root.name
+        item.package = "car-controller"
+        item.version = "1.0.0"
+        item.config = ""
+        kv = item.config_items.add()
+        kv.key = "demo"
+        kv.value_type = "bool"
+        kv.value = "true"
+        item.physics = ""
+        kv = item.physics_items.add()
+        kv.key = "enabled"
+        kv.value_type = "bool"
+        kv.value = "false"
+        check(len(item.config_items) == 1, "config 键值列表")
+        check(len(item.physics_items) == 1, "physics 键值列表")
+        check(len(context.scene.hpm_virtual_devices) == 1, "虚拟设备列表 1 项")
+        check(bpy.ops.hpm_virtual.export_project() == {"FINISHED"},
+              "带虚拟设备导出")
+        result3 = json.loads(str(context.scene.hpm_last_export))
+        data3 = json.loads(Path(result3["json"]).read_text(encoding="utf-8"))
+        virtual = next((d for d in data3["devices"] if d["name"] == "virtual-test"), None)
+        check(virtual is not None, "virtual.json 生成虚拟设备")
+        check(virtual["node"].endswith(root.name), "虚拟设备节点路径完整")
+        check(virtual.get("config", {}).get("demo") is True, "虚拟设备 config 导出")
+        check(virtual.get("physics", {}).get("enabled") is False, "虚拟设备 physics 导出")
+        check(bpy.ops.hpm_virtual.remove_virtual_device() == {"FINISHED"},
+              "删除虚拟设备")
+        check(len(context.scene.hpm_virtual_devices) == 0, "虚拟设备列表已清空")
+
     print(f"BLENDER ADDON: {len(failures)} failure(s)")
     if failures:
         for message in failures:

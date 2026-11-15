@@ -559,7 +559,7 @@ func _refresh_hint() -> void:
 	if _hint_label == null:
 		return
 	var lines := PackedStringArray()
-	lines.append("WASD 平移 · Q/E 升降 · 方向键 旋转")
+	lines.append("WASD 平移 · Q/E 升降 · 方向键旋转 · 选择模式右键拖动旋转视角")
 	if not _hover_hint.is_empty():
 		lines.append(_hover_hint)
 	elif _current_tool == "ruler":

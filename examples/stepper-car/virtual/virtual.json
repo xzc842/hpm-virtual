@@ -233,6 +233,12 @@
         "name": "car-controller",
         "version": "1.0.0",
         "path": "virtual/packages/car-controller-1.0.0"
+      },
+      "config": {
+        "wheel_fl": "stepper_fl",
+        "wheel_fr": "stepper_fr",
+        "wheel_rl": "stepper_rl",
+        "wheel_rr": "stepper_rr"
       }
     }
   ]
