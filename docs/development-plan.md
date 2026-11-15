@@ -29,7 +29,6 @@ res://
   examples/ultrasonic/  # 通用 ultrasonic-* 驱动 + 有效距离标尺
   examples/servo-arm/   # 舵机长杆扫过超声 -> 实测距离 -> LED
   examples/stepper-car/ # 四轮步进小车 + 超声波避墙
-  packages/ultrasonic-*-1.0.0/ # 通用超声驱动包源码（MIT）
   tools/build_example_scenes.gd # 生成示例 virtual.glb / 自定义包模型
   tools/build_example_blends.py # 生成四个 virtual.blend
   tools/build_demo_assets.gd   # 生成测试 fixture GLB/glTF

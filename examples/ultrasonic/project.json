@@ -3,6 +3,7 @@
     "sonar": {
       "config": {
         "effective_distance": "30",
+        "loops_per_cm": "42",
         "max_distance": "400",
         "step_cm": "4"
       },

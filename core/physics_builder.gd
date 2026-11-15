@@ -130,6 +130,74 @@ static func _build_body(mesh: MeshInstance3D, physics: Dictionary, default_frict
 	mesh.set_meta("hpm_physics_built", true)
 	return true
 
+
+## 车辆底盘：VehicleBody3D + 四个 VehicleWheel3D，轮子由轮胎摩擦驱动。
+static func build_vehicle(root: Node3D, physics: Dictionary) -> VehicleBody3D:
+	if root == null:
+		return null
+	var body_box := AABB()
+	var full_box := AABB()
+	var first := true
+	var full_first := true
+	for node in root.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if mesh.mesh == null:
+			continue
+		var box := mesh.global_transform * mesh.get_aabb()
+		if full_first:
+			full_box = box
+			full_first = false
+		else:
+			full_box = full_box.merge(box)
+		var parent := mesh.get_parent()
+		var is_wheel := parent != null and String(parent.name).begins_with("stepper_")
+		var is_sensor := String(mesh.name).begins_with("Body2") or parent != null and String(parent.name) == "sonar"
+		if is_wheel or is_sensor:
+			continue
+		if first:
+			body_box = box
+			first = false
+		else:
+			body_box = body_box.merge(box)
+	if not body_box.has_volume():
+		return null
+	var body := VehicleBody3D.new()
+	body.name = "HPMVehicle"
+	body.mass = clampf(float(physics.get("mass", 1.0)), 0.001, 100000.0)
+	body.physics_material_override = make_material(physics, 0.8)
+	body.continuous_cd = true
+	body.collision_layer = 1
+	body.collision_mask = 1
+	body.set_meta("hpm_mass", body.mass)
+	root.add_child(body)
+	body.top_level = true
+	body.global_position = body_box.get_center()
+	var collision := CollisionShape3D.new()
+	collision.name = "ChassisShape"
+	var shape := BoxShape3D.new()
+	# 底盘碰撞盒缩到车轮内侧，避免挡住 VehicleWheel 向下射线。
+	shape.size = Vector3(body_box.size.x * 0.82, body_box.size.y, body_box.size.z * 0.82)
+	collision.shape = shape
+	body.add_child(collision)
+	var wheels: Array = physics.get("wheels", [])
+	for i in range(wheels.size()):
+		var spec: Dictionary = wheels[i]
+		var wheel := VehicleWheel3D.new()
+		wheel.name = "Wheel" + String(spec.get("name", str(i)))
+		wheel.position = Vector3(float(spec.get("x", 0.0)), float(spec.get("y", -0.05)), float(spec.get("z", 0.0)))
+		wheel.wheel_radius = float(physics.get("wheel_radius", 0.08))
+		wheel.wheel_rest_length = 0.01
+		wheel.suspension_travel = 0.06
+		wheel.suspension_stiffness = 150.0
+		wheel.suspension_max_force = 400.0
+		wheel.damping_compression = 10.0
+		wheel.damping_relaxation = 10.0
+		wheel.wheel_friction_slip = 1.2
+		wheel.use_as_traction = true
+		wheel.use_as_steering = false
+		body.add_child(wheel)
+	return body
+
 ## 为小车底盘创建单个 RigidBody3D；每个网格生成碰撞盒（轮子自身接地，底盘盒不贴地）。
 static func build_rigid(root: Node3D, physics: Dictionary) -> RigidBody3D:
 	if root == null:
@@ -155,7 +223,10 @@ static func build_rigid(root: Node3D, physics: Dictionary) -> RigidBody3D:
 	var body := RigidBody3D.new()
 	body.name = "HPMRigidBody"
 	body.mass = clampf(float(physics.get("mass", 1.0)), 0.001, 100000.0)
-	body.physics_material_override = make_material(physics, 0.8)
+	var car_material := make_material(physics, 0.8)
+	# 轮胎牵引力由 car-controller 计算；避免接触摩擦重复抵消牵引力。
+	car_material.friction = 0.0
+	body.physics_material_override = car_material
 	body.continuous_cd = true
 	body.collision_layer = 1
 	body.collision_mask = 1

@@ -1,101 +1,238 @@
 {
   "version": 1,
   "scene": "virtual.glb",
-  "physics": {
-    "friction": 0.85,
-    "mass": 1.0,
-    "rough": true
-  },
   "objects": [
     {
-      "node": "Floor",
+      "node": "VirtualScene/Car/Body",
       "physics": {
-        "friction": 0.9,
+        "friction": 0.8,
         "mass": 1.0,
-        "rough": true
+        "rough": true,
+        "bounce": 0.0,
+        "enabled": true
       }
     },
     {
-      "node": "Wall",
+      "node": "VirtualScene/Floor",
+      "physics": {
+        "friction": 0.9,
+        "mass": 1.0,
+        "rough": true,
+        "bounce": 0.0,
+        "enabled": true
+      }
+    },
+    {
+      "node": "VirtualScene/Wall",
       "physics": {
         "friction": 0.8,
         "mass": 10.0,
-        "rough": true
+        "rough": true,
+        "bounce": 0.0,
+        "enabled": true
       }
     }
   ],
   "devices": [
     {
-      "name": "car",
-      "title": "四轮小车",
-      "node": "Car",
-      "package": "car-controller",
+      "name": "sonar",
+      "node": "VirtualScene/Car/sonar",
+      "package": "ultrasonic",
       "version": "1.0.0",
-      "props": {}
+      "objects": [
+        {
+          "node": "RightEye",
+          "physics": {
+            "friction": 0.35,
+            "mass": 0.01,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "Pins",
+          "physics": {
+            "friction": 0.6,
+            "mass": 0.08,
+            "rough": true,
+            "bounce": 0.05,
+            "enabled": true
+          }
+        },
+        {
+          "node": "Mount",
+          "physics": {
+            "friction": 0.75,
+            "mass": 0.02,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "LeftEye",
+          "physics": {
+            "friction": 0.35,
+            "mass": 0.01,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "Body2",
+          "physics": {
+            "friction": 0.6,
+            "mass": 0.08,
+            "rough": true,
+            "bounce": 0.05,
+            "enabled": true
+          }
+        }
+      ],
+      "config": {
+        "auto_measure": true
+      },
+      "physics": {
+        "enabled": false
+      }
     },
     {
       "name": "stepper_fl",
-      "title": "左前轮",
-      "node": "Car/stepper_fl",
+      "node": "VirtualScene/Car/stepper_fl",
       "package": "stepper",
       "version": "1.0.0",
-      "config": {
-        "step_angle": "2"
-      },
+      "objects": [
+        {
+          "node": "Tire",
+          "physics": {
+            "friction": 0.9,
+            "mass": 0.08,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "Hub",
+          "physics": {
+            "friction": 0.5,
+            "mass": 0.04,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        }
+      ],
       "physics": {
         "enabled": false
       }
     },
     {
       "name": "stepper_fr",
-      "title": "右前轮",
-      "node": "Car/stepper_fr",
+      "node": "VirtualScene/Car/stepper_fr",
       "package": "stepper",
       "version": "1.0.0",
-      "config": {
-        "step_angle": "2"
-      },
+      "objects": [
+        {
+          "node": "Tire2",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.12,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "Hub2",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.12,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        }
+      ],
       "physics": {
         "enabled": false
       }
     },
     {
       "name": "stepper_rl",
-      "title": "左后轮",
-      "node": "Car/stepper_rl",
+      "node": "VirtualScene/Car/stepper_rl",
       "package": "stepper",
       "version": "1.0.0",
-      "config": {
-        "step_angle": "2"
-      },
+      "objects": [
+        {
+          "node": "Tire3",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.12,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "Hub3",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.12,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        }
+      ],
       "physics": {
         "enabled": false
       }
     },
     {
       "name": "stepper_rr",
-      "title": "右后轮",
-      "node": "Car/stepper_rr",
+      "node": "VirtualScene/Car/stepper_rr",
       "package": "stepper",
       "version": "1.0.0",
-      "config": {
-        "step_angle": "2"
-      },
+      "objects": [
+        {
+          "node": "Tire4",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.12,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "Hub4",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.12,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        }
+      ],
       "physics": {
         "enabled": false
       }
     },
     {
-      "name": "sonar",
-      "title": "超声波",
-      "node": "Car/sonar",
-      "package": "ultrasonic",
+      "name": "car",
+      "title": "四轮小车",
+      "node": "VirtualScene/Car",
+      "package": "car-controller",
       "version": "1.0.0",
-      "config": {
-        "auto_measure": true
-      },
-      "physics": {
-        "enabled": false
+      "props": {},
+      "override": {
+        "name": "car-controller",
+        "version": "1.0.0",
+        "path": "virtual/packages/car-controller-1.0.0"
       }
     }
   ]

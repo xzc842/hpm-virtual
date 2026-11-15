@@ -125,6 +125,7 @@ class HPM_PT_friction(bpy.types.Panel):
         column.prop(obj, "hpm_rough", text="Rough")
         column.prop(obj, "hpm_bounce", text="弹性")
         column.prop(obj, "hpm_physics_enabled", text="启用碰撞")
+        column.prop(obj, "hpm_config", text="设备 config JSON")
         layout.label(text="导出时写入 virtual.json 的 objects", icon="INFO")
 
 

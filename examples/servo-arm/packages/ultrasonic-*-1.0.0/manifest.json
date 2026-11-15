@@ -24,6 +24,11 @@
       "default": "4",
       "title": "每次触发接近距离",
       "unit": "cm"
+    },
+    "loops_per_cm": {
+      "type": "int",
+      "default": "60",
+      "title": "每厘米循环数"
     }
   },
   "requires": {
@@ -38,6 +43,7 @@
       "type": "gpio_out",
       "methods": [
         "init",
+        "write",
         "read"
       ]
     }

@@ -25,6 +25,7 @@ driver = "ultrasonic"
 trig = "P1_1"
 echo = "P1_2"
 [devices.sonar.config]
+loops_per_cm = "42"
 effective_distance = "10"
 max_distance = "400"
 step_cm = "4"

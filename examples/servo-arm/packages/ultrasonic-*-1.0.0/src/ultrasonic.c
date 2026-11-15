@@ -23,6 +23,7 @@
  */
 
 #include "ultrasonic.h"
+#include "config.h"
 
 #define HPM_CAT_(a, b) a##b
 #define HPM_CAT(a, b)  HPM_CAT_(a, b)
@@ -48,15 +49,25 @@ void HPM_FN(trigger)(void) {
     HPM_CALL(trig, write)(0);
 }
 
-/* 真实硬件：测量 ECHO 高电平时间并换算为厘米；超时返回最大值。 */
+/* 通用 GPIO 超声测距：只使用 trig/echo 的 HPM API，不依赖任何架构寄存器。
+ * loops_per_cm 由平台/编译器标定，配置在 manifest 中。 */
 int HPM_FN(read_cm)(void) {
     HPM_FN(trigger)();
 
     unsigned long timeout = 2000UL;
-    while (!HPM_CALL(echo, read)() && --timeout) {
+    while (!HPM_CALL(echo, read)()) {
+        if (--timeout == 0UL) return max_distance;
     }
-    if (!timeout) return 400;
 
-    /* 虚拟调试按“有效范围内”回一个近距值；真实硬件可另行标定脉宽。 */
-    return 6;
+    unsigned long loops = 0;
+    timeout = 2000UL;
+    while (HPM_CALL(echo, read)()) {
+        ++loops;
+        if (--timeout == 0UL) return max_distance;
+    }
+
+    unsigned long cm = loops / (unsigned long)loops_per_cm;
+    if (cm < 2UL) return max_distance;
+    if (cm > (unsigned long)max_distance) return max_distance;
+    return (int)cm;
 }

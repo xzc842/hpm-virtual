@@ -150,6 +150,20 @@ def main() -> None:
     floor_json = next(item for item in exported["objects"] if item["node"] == "Floor")
     check(abs(floor_json["physics"]["friction"] - 0.9) < 1e-4, "地板摩擦写入 virtual.json")
 
+    # 重新导出必须保留 Blender 不管理的 config / physics 字段。
+    json_file = Path(result["json"])
+    data = json.loads(json_file.read_text(encoding="utf-8"))
+    first = data["devices"][0]
+    first["config"] = {"auto_measure": True}
+    first["physics"] = {"enabled": False}
+    json_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    check(bpy.ops.hpm_virtual.export_project() == {"FINISHED"}, "二次导出")
+    result2 = json.loads(str(context.scene.hpm_last_export))
+    data2 = json.loads(Path(result2["json"]).read_text(encoding="utf-8"))
+    kept = next(item for item in data2["devices"] if item["name"] == first["name"])
+    check(kept.get("config", {}).get("auto_measure") is True, "保留 config")
+    check(kept.get("physics", {}).get("enabled") is False, "保留 physics")
+
     copied = project_dir / "virtual" / "packages" / PACK_NAME
     check((copied / "virtual.gd").is_file(), "复制 virtual.gd")
     check((copied / "model.gltf").is_file(), "复制模型")

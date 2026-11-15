@@ -73,6 +73,9 @@ def register() -> None:
     bpy.types.Object.hpm_device = bpy.props.StringProperty(default="")
     bpy.types.Object.hpm_props = bpy.props.StringProperty(default="")
     bpy.types.Object.hpm_override = bpy.props.StringProperty(default="")
+    bpy.types.Object.hpm_config = bpy.props.StringProperty(
+        name="HPM 虚拟设备 config", default="{}"
+    )
     bpy.types.Object.hpm_friction = bpy.props.FloatProperty(
         name="摩擦系数", min=0.0, max=1.0, default=0.8, precision=3
     )
@@ -99,8 +102,8 @@ def unregister() -> None:
         if hasattr(bpy.types.Scene, prop_name):
             delattr(bpy.types.Scene, prop_name)
     for prop_name in (
-        "hpm_device", "hpm_props", "hpm_override", "hpm_friction", "hpm_mass",
-        "hpm_rough", "hpm_bounce", "hpm_physics_enabled", "hpm_physics_owner",
+        "hpm_device", "hpm_props", "hpm_override", "hpm_config", "hpm_friction",
+        "hpm_mass", "hpm_rough", "hpm_bounce", "hpm_physics_enabled", "hpm_physics_owner",
     ):
         if hasattr(bpy.types.Object, prop_name):
             delattr(bpy.types.Object, prop_name)

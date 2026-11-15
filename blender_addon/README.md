@@ -9,7 +9,7 @@
 
 ```bash
 tools/package_blender_addon.sh
-# dist/hpm_virtual-1.0.6.zip
+# dist/hpm_virtual-1.0.10.zip
 ```
 
 Blender：`编辑 > 偏好设置 > 获取扩展 > 从磁盘安装`，选择该 zip，启用 “HPM Virtual”。

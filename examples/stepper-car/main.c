@@ -18,7 +18,7 @@
 
 #include "driver.h"
 
-#define NEAR_CM 25
+#define NEAR_CM 70
 
 static void set_dirs(int left_dir, int right_dir) {
     stepper_fl_set_dir(left_dir);
@@ -42,12 +42,12 @@ void main(void) {
         int cm = sonar_read_cm();
         if (cm < NEAR_CM) {
             set_dirs(0, 0);
-            pulse_all(180);
+            pulse_all(90);
             set_dirs(0, 1);
-            pulse_all(150);
+            pulse_all(75);
         } else {
             set_dirs(1, 1);
-            pulse_all(200);
+            pulse_all(20);
         }
     }
 }

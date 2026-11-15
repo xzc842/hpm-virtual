@@ -84,9 +84,7 @@ examples/project2     project1 + 自定义虚拟包（可点击 LED）
 examples/ultrasonic   通用超声波驱动 + 有效距离标尺仿真
 examples/servo-arm    舵机长杆遮挡超声波 -> LED
 examples/stepper-car  四轮步进小车 + 超声波避墙
-packages/stepper-*-1.0.0/ 通用 STEP/DIR 步进驱动（MIT）
 blender_addon/        Blender 插件（模型列表、拖入、摩擦/质量、自定义包、导出）
-packages/ultrasonic-*-1.0.0/ 通用超声驱动包源码（MIT）
 tools/                生成示例场景/Blender 文件、模拟调试服务、打包插件
 tests/                冒烟/真实设备/覆盖包/PWM/标尺/交互/Blender 测试
 docs/spec/            virtual.json / device.json / virtual.gd / 自定义虚拟包

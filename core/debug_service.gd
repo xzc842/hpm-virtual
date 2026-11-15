@@ -323,14 +323,18 @@ func _on_sse_event(event_name: String, data: String, _event_id: String) -> void:
 					if typeof(item) == TYPE_DICTIONARY:
 						var entry: Dictionary = item
 						var name := String(entry.get("device", entry.get("name", "")))
-						var values: Variant = entry.get("values", {})
+						var values: Variant = entry.get("values", entry.get("state", {}))
 						if not name.is_empty() and typeof(values) == TYPE_DICTIONARY:
 							_emit_values(name, values)
 			if obj.has("active") and not bool(obj.get("active")):
 				_deactivate()
-		"device":
-			var name := String(obj.get("device", ""))
+		"device", "state", "device.updated", "event":
+			var name := String(obj.get("device", obj.get("name", "")))
 			var values: Variant = obj.get("values", {})
+			if typeof(values) != TYPE_DICTIONARY or (values as Dictionary).is_empty():
+				var ui: Variant = obj.get("ui", {})
+				if typeof(ui) == TYPE_DICTIONARY:
+					values = (ui as Dictionary).get("state", {})
 			if not name.is_empty() and typeof(values) == TYPE_DICTIONARY:
 				_emit_values(name, values)
 		"reset":

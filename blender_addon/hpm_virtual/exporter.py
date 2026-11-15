@@ -52,7 +52,7 @@ def _mesh_objects(root: bpy.types.Object) -> list[dict[str, Any]]:
 def _device_objects(entry: dict[str, Any], root: bpy.types.Object) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "name": entry["name"],
-        "node": root.name,
+        "node": _scene_path(root),
         "package": entry.get("package", ""),
         "version": entry.get("version", ""),
         "objects": _mesh_objects(root),
@@ -61,6 +61,12 @@ def _device_objects(entry: dict[str, Any], root: bpy.types.Object) -> dict[str, 
         props = json.loads(str(scene.get_prop(root, "hpm_props", "") or "{}"))
         if isinstance(props, dict) and props:
             payload["props"] = props
+    except ValueError:
+        pass
+    try:
+        config = json.loads(str(scene.get_prop(root, "hpm_config", "") or "{}"))
+        if isinstance(config, dict) and config:
+            payload["config"] = config
     except ValueError:
         pass
 
@@ -161,6 +167,16 @@ def export_project(project: dict[str, Any]) -> dict[str, Any]:
     warnings: list[str] = []
     devices: list[dict[str, Any]] = []
     used_overrides: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    glb_path = os.path.join(virtual_dir, "virtual.glb")
+    json_path = os.path.join(virtual_dir, "virtual.json")
+    existing = data.read_json(json_path) if os.path.isfile(json_path) else {}
+    existing_devices = {}
+    if isinstance(existing, dict):
+        existing_devices = {
+            str(item.get("name", "")): item
+            for item in existing.get("devices", []) or []
+            if isinstance(item, dict) and str(item.get("name", ""))
+        }
 
     for entry in project.get("devices", []):
         name = entry["name"]
@@ -171,9 +187,35 @@ def export_project(project: dict[str, Any]) -> dict[str, Any]:
         current = _root_entry(project, entry, device_root)
         if current.get("override_error"):
             warnings.append(f"设备 {name}：{current['override_error']}")
-        devices.append(_device_objects(current, device_root))
+        payload = _device_objects(current, device_root)
+        # 保留 virtual.json 里 Blender 不管理的字段（config / physics / props / override）。
+        old = existing_devices.get(name)
+        if isinstance(old, dict):
+            for key in ("config", "physics", "props", "override"):
+                if key in old and key not in payload:
+                    payload[key] = old[key]
+        devices.append(payload)
         if current.get("override"):
             used_overrides.append((current["override"], current))
+
+    # 保留仅存在于 virtual.json 的虚拟设备（例如 car-controller），
+    # 它们没有对应的 HPM project.json 驱动。
+    exported_names = {str(item.get("name", "")) for item in devices}
+    if isinstance(existing, dict):
+        for item in existing.get("devices", []) or []:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name", ""))
+            if name and name not in exported_names:
+                # 虚拟设备的旧 node 可能缺少场景根节点；按对象名重新计算完整路径。
+                old_node = str(item.get("node", ""))
+                leaf = old_node.rsplit("/", 1)[-1]
+                obj = bpy.data.objects.get(leaf)
+                if obj is not None:
+                    item = dict(item)
+                    item["node"] = _scene_path(obj)
+                devices.append(item)
+                exported_names.add(name)
 
     virtual_json = {
         "version": 1,
@@ -181,9 +223,6 @@ def export_project(project: dict[str, Any]) -> dict[str, Any]:
         "objects": _environment_objects(),
         "devices": devices,
     }
-
-    glb_path = os.path.join(virtual_dir, "virtual.glb")
-    json_path = os.path.join(virtual_dir, "virtual.json")
 
     bpy.ops.export_scene.gltf(
         filepath=glb_path,

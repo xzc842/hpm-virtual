@@ -22,6 +22,7 @@ trig = "P1_0"
 echo = "P1_1"
 
 [devices.sonar.config]
+loops_per_cm = "42"
 effective_distance = "30"
 max_distance = "400"
 step_cm = "4"

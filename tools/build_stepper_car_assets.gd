@@ -19,7 +19,7 @@ extends SceneTree
 
 const GltfEmbed := preload("res://tools/gltf_embed.gd")
 const SCENE := "res://examples/stepper-car/virtual/virtual.glb"
-const WHEEL_GLTF := "res://packages/stepper-*-1.0.0/debug/device.gltf"
+var WHEEL_GLTF := OS.get_environment("HOME").path_join(".hpm/packages/stepper-*-1.0.0/debug/device.gltf")
 
 func _init() -> void:
 	var wheel := _build_wheel()
@@ -107,9 +107,9 @@ func _build_scene() -> Node3D:
 	var floor := MeshInstance3D.new()
 	floor.name = "Floor"
 	var floor_mesh := BoxMesh.new()
-	floor_mesh.size = Vector3(4.0, 0.02, 5.0)
+	floor_mesh.size = Vector3(20.0, 0.02, 20.0)
 	floor.mesh = floor_mesh
-	floor.position = Vector3(0, -0.01, 0.6)
+	floor.position = Vector3(0, -0.01, 0.0)
 	floor.material_override = _material(Color(0.28, 0.31, 0.35))
 	root.add_child(floor)
 	return root

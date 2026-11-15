@@ -1,0 +1,39 @@
+{
+  "name": "car-controller",
+  "display_name": "小车底盘",
+  "version": "1.0.0",
+  "script": "virtual.gd",
+  "physics": {
+    "rigid": true,
+    "mass": 1.2,
+    "friction": 0.8,
+    "bounce": 0.0,
+    "vehicle": true,
+    "wheels": [
+      {
+        "name": "FL",
+        "x": -0.17,
+        "y": -0.05,
+        "z": 0.2
+      },
+      {
+        "name": "FR",
+        "x": 0.17,
+        "y": -0.05,
+        "z": 0.2
+      },
+      {
+        "name": "RL",
+        "x": -0.17,
+        "y": -0.05,
+        "z": -0.2
+      },
+      {
+        "name": "RR",
+        "x": 0.17,
+        "y": -0.05,
+        "z": -0.2
+      }
+    ]
+  }
+}

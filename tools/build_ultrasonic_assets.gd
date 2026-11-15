@@ -19,7 +19,7 @@
 extends SceneTree
 
 const GltfEmbed := preload("res://tools/gltf_embed.gd")
-const PACKAGE_DEBUG := "res://packages/ultrasonic-*-1.0.0/debug"
+var PACKAGE_DEBUG := OS.get_environment("HOME").path_join(".hpm/packages/ultrasonic-*-1.0.0/debug")
 const SCENE_DIR := "res://examples/ultrasonic/virtual"
 
 func _init() -> void:
