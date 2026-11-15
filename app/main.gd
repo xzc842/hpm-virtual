@@ -2,8 +2,7 @@
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# the Free Software Foundation; version 3 of the License.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -131,6 +130,12 @@ func _build_welcome(root: Control) -> void:
 	title.text = "HPM Virtual"
 	title.add_theme_font_size_override("font_size", 40)
 	box.add_child(title)
+
+	var copyright := Label.new()
+	copyright.text = "Copyright XueZicheng 2026 GNU General Public License v3.0 only"
+	copyright.add_theme_color_override("font_color", Color(0.55, 0.62, 0.72))
+	copyright.add_theme_font_size_override("font_size", 14)
+	box.add_child(copyright)
 
 	var subtitle := Label.new()
 	subtitle.text = "打开一个 HPM 工程，加载 virtual 场景并连接调试器。"

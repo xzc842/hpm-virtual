@@ -183,7 +183,7 @@ tests/run_blender_addon_test.sh    # 无头测试
 
 自定义包可放在 `~/.hpm/virtual/` 或 `<项目>/virtual/packages/`。
 
-所有 HPM 设备包使用 **MIT** 协议；本仓库自身使用 GPL-2.0-or-later。
+所有 HPM 设备包使用 **MIT** 协议；本仓库自身使用 GPL-3.0-only。
 详见 [blender_addon/README.md](blender_addon/README.md) 与
 [自定义虚拟包规范](docs/spec/custom-virtual-pack.md)。
 
@@ -214,5 +214,5 @@ PWM 调试插件、Blender 插件、自定义包运行时覆盖、五个完整�
 
 ## License
 
-本项目使用 GNU General Public License v2.0 或更高版本（GPL-2.0-or-later），
+本项目使用 GNU General Public License v3.0 only（GPL-3.0-only），
 见 [LICENSE](LICENSE)。
