@@ -33,7 +33,7 @@ class HPM_UL_key_values(bpy.types.UIList):
                   active_propname, index):
         row = layout.row(align=True)
         row.label(text=str(item.key or ""), icon="KEY_HLT")
-        row.label(text=str(item.value_type or ""))
+        row.label(text=str(item.title or item.key or ""))
         row.label(text=str(item.value or ""))
 
 
@@ -197,6 +197,7 @@ class HPM_PT_virtual_devices(bpy.types.Panel):
         box.prop(item, "package", text="包名")
         box.prop(item, "version", text="版本")
         box.prop(item, "override_path", text="override 路径")
+        box.operator("hpm_virtual.refresh_virtual_schema", text="按设备包刷新 config 条目", icon="FILE_REFRESH")
         _draw_kv(box, item, "config_items", "config_index", "config",
                  virtual_index=index)
         _draw_kv(box, item, "physics_items", "physics_index", "physics",
@@ -209,28 +210,18 @@ def _draw_kv(layout, owner, collection_name: str, index_name: str,
     box = layout.box()
     box.label(text="config" if kind == "config" else "physics")
     header = box.row(align=True)
-    first = header.split(factor=0.38)
+    first = header.split(factor=0.34)
     first.label(text="键")
-    middle = first.split(factor=0.35)
-    middle.label(text="类型")
+    middle = first.split(factor=0.48)
+    middle.label(text="标题")
     middle.label(text="值")
     row = box.row()
     row.template_list("HPM_UL_key_values", collection_name, owner, collection_name,
                       owner, index_name)
-    column = row.column(align=True)
-    add = column.operator("hpm_virtual.add_kv", text="", icon="ADD")
-    add.kind = kind
-    add.virtual_index = virtual_index
-    add.object_mode = object_mode
-    remove = column.operator("hpm_virtual.remove_kv", text="", icon="REMOVE")
-    remove.kind = kind
-    remove.virtual_index = virtual_index
-    remove.object_mode = object_mode
     collection = getattr(owner, collection_name)
     index = int(getattr(owner, index_name, 0))
     if 0 <= index < len(collection):
         item = collection[index]
-        sub = box.row(align=True)
-        sub.prop(item, "key", text="键")
-        sub.prop(item, "value_type", text="")
+        box.label(text="键：" + str(item.key))
+        box.label(text="标题：" + str(item.title))
         box.prop(item, "value", text="值")

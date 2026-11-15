@@ -188,18 +188,18 @@ def main() -> None:
         item.object_name = root.name
         item.package = "car-controller"
         item.version = "1.0.0"
-        item.config = ""
-        kv = item.config_items.add()
-        kv.key = "demo"
-        kv.value_type = "bool"
-        kv.value = "true"
-        item.physics = ""
-        kv = item.physics_items.add()
-        kv.key = "enabled"
-        kv.value_type = "bool"
-        kv.value = "false"
-        check(len(item.config_items) == 1, "config 键值列表")
-        check(len(item.physics_items) == 1, "physics 键值列表")
+        item.override_path = str(ROOT / "examples" / "stepper-car" / "virtual" / "packages" / "car-controller-1.0.0")
+        check(bpy.ops.hpm_virtual.refresh_virtual_schema() == {"FINISHED"},
+              "按设备包刷新 config 条目")
+        check(len(item.config_items) == 4, "config 固定条目")
+        check(len(item.physics_items) == 5, "physics 固定条目")
+        check(item.config_items[0].title != "", "config 条目包含 title")
+        for kv in item.config_items:
+            if kv.key == "wheel_fl":
+                kv.value = "custom_left_wheel"
+        for kv in item.physics_items:
+            if kv.key == "enabled":
+                kv.value = "false"
         check(len(context.scene.hpm_virtual_devices) == 1, "虚拟设备列表 1 项")
         check(bpy.ops.hpm_virtual.export_project() == {"FINISHED"},
               "带虚拟设备导出")
@@ -208,7 +208,8 @@ def main() -> None:
         virtual = next((d for d in data3["devices"] if d["name"] == "virtual-test"), None)
         check(virtual is not None, "virtual.json 生成虚拟设备")
         check(virtual["node"].endswith(root.name), "虚拟设备节点路径完整")
-        check(virtual.get("config", {}).get("demo") is True, "虚拟设备 config 导出")
+        check(virtual.get("config", {}).get("wheel_fl") == "custom_left_wheel",
+              "虚拟设备 config 导出")
         check(virtual.get("physics", {}).get("enabled") is False, "虚拟设备 physics 导出")
         check(bpy.ops.hpm_virtual.remove_virtual_device() == {"FINISHED"},
               "删除虚拟设备")

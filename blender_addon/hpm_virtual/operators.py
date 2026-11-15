@@ -27,6 +27,82 @@ from mathutils import Vector
 from . import data, exporter, scene, state
 
 
+def _device_schema(project_root: str, mcu: str, package: str,
+                   override_path: str, version: str) -> dict:
+    path = ""
+    if override_path:
+        candidate = override_path
+        if not os.path.isabs(candidate) and project_root:
+            candidate = os.path.join(project_root, candidate)
+        if os.path.isdir(candidate):
+            path = candidate
+    if not path and package:
+        found = data.find_package(package, mcu, project_root)
+        if found:
+            path = os.path.join(found["path"], "debug")
+    if not path:
+        return {}
+    return data.read_json(os.path.join(path, "device.json"))
+
+
+def _fill_kv(owner, collection_name: str, entries: list[tuple[str, str, str, str]],
+             old: dict) -> None:
+    collection = getattr(owner, collection_name)
+    collection.clear()
+    for key, kind, title, default in entries:
+        item = collection.add()
+        item.key = key
+        item.title = title
+        item.value_type = kind
+        value = old.get(key, default)
+        if isinstance(value, bool):
+            item.value = "true" if value else "false"
+        else:
+            item.value = str(value)
+
+
+class HPM_OT_refresh_virtual_schema(bpy.types.Operator):
+    bl_idname = "hpm_virtual.refresh_virtual_schema"
+    bl_label = "刷新配置条目"
+    bl_description = "按设备包的 device.json 重建固定的 config 条目"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        items = context.scene.hpm_virtual_devices
+        index = context.scene.hpm_virtual_device_index
+        if not (0 <= index < len(items)):
+            return {"CANCELLED"}
+        item = items[index]
+        project = state.get_project(context)
+        device = _device_schema(project["root"], project["mcu"], item.package,
+                                item.override_path, item.version)
+        schema = device.get("config", {}) if isinstance(device, dict) else {}
+        entries = []
+        for key, spec in (schema.items() if isinstance(schema, dict) else []):
+            if not isinstance(spec, dict):
+                continue
+            kind = str(spec.get("type", "string")).lower()
+            kind = "float" if kind in ("float", "double", "number") else "int" if kind in ("int", "integer") else "bool" if kind == "bool" else "string"
+            entries.append((str(key), kind, str(spec.get("title", key)),
+                            str(spec.get("default", ""))))
+        old = {}
+        for kv in item.config_items:
+            old[kv.key] = kv.value
+        _fill_kv(item, "config_items", entries, old)
+        physics = [
+            ("enabled", "bool", "启用碰撞", "true"),
+            ("friction", "float", "摩擦系数", "0.8"),
+            ("mass", "float", "质量 (kg)", "1.0"),
+            ("rough", "bool", "Rough", "true"),
+            ("bounce", "float", "弹性", "0.0"),
+        ]
+        old_physics = {}
+        for kv in item.physics_items:
+            old_physics[kv.key] = kv.value
+        _fill_kv(item, "physics_items", physics, old_physics)
+        return {"FINISHED"}
+
+
 class HPM_OT_add_kv(bpy.types.Operator):
     bl_idname = "hpm_virtual.add_kv"
     bl_label = "添加键值"
@@ -114,6 +190,7 @@ class HPM_OT_add_virtual_device(bpy.types.Operator):
         item.physics = json.dumps(exporter._physics_dict(obj), ensure_ascii=False)
         item.override_path = ""
         context.scene.hpm_virtual_device_index = len(context.scene.hpm_virtual_devices) - 1
+        bpy.ops.hpm_virtual.refresh_virtual_schema()
         return {"FINISHED"}
 
 
@@ -169,6 +246,10 @@ class HPM_OT_load_project(bpy.types.Operator):
             return {"CANCELLED"}
         state.store_project(context, project)
         state.recover_virtual_devices(context)
+        for index in range(len(context.scene.hpm_virtual_devices)):
+            context.scene.hpm_virtual_device_index = index
+            bpy.ops.hpm_virtual.refresh_virtual_schema()
+        context.scene.hpm_virtual_device_index = 0
         if not auto_opened and not scene.device_roots():
             _import_project_models(context, path, project)
         errors = [entry["name"] for entry in project["devices"] if entry.get("error")]

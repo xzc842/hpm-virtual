@@ -224,21 +224,168 @@
     },
     {
       "name": "car",
-      "title": "四轮小车",
       "node": "VirtualScene/Car",
       "package": "car-controller",
       "version": "1.0.0",
-      "props": {},
-      "override": {
-        "name": "car-controller",
-        "version": "1.0.0",
-        "path": "virtual/packages/car-controller-1.0.0"
-      },
+      "objects": [
+        {
+          "node": "stepper_rr/Tire4",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.12,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "stepper_rr/Hub4",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.12,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "stepper_rl/Tire3",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.12,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "stepper_rl/Hub3",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.12,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "stepper_fr/Tire2",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.12,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "stepper_fr/Hub2",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.12,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "stepper_fl/Tire",
+          "physics": {
+            "friction": 0.9,
+            "mass": 0.08,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "stepper_fl/Hub",
+          "physics": {
+            "friction": 0.5,
+            "mass": 0.04,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "sonar/RightEye",
+          "physics": {
+            "friction": 0.35,
+            "mass": 0.01,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "sonar/Pins",
+          "physics": {
+            "friction": 0.6,
+            "mass": 0.08,
+            "rough": true,
+            "bounce": 0.05,
+            "enabled": true
+          }
+        },
+        {
+          "node": "sonar/Mount",
+          "physics": {
+            "friction": 0.75,
+            "mass": 0.02,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "sonar/LeftEye",
+          "physics": {
+            "friction": 0.35,
+            "mass": 0.01,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "sonar/Body2",
+          "physics": {
+            "friction": 0.6,
+            "mass": 0.08,
+            "rough": true,
+            "bounce": 0.05,
+            "enabled": true
+          }
+        },
+        {
+          "node": "Body",
+          "physics": {
+            "friction": 0.8,
+            "mass": 1.0,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        }
+      ],
       "config": {
         "wheel_fl": "stepper_fl",
         "wheel_fr": "stepper_fr",
         "wheel_rl": "stepper_rl",
         "wheel_rr": "stepper_rr"
+      },
+      "physics": {
+        "friction": 0.8,
+        "mass": 1.0,
+        "rough": true,
+        "bounce": 0.0,
+        "enabled": true
+      },
+      "override": {
+        "name": "car-controller",
+        "version": "1.0.0",
+        "path": "virtual/packages/car-controller-1.0.0"
       }
     }
   ]

@@ -209,8 +209,8 @@ PWM 调试插件、Blender 插件、自定义包运行时覆盖、五个完整�
     virtual.gd      # extends "res://sdk/virtual_device.gd"
 ```
 
-安装位置：`~/.hpm/packages`；开发时也支持 `$HPM_PACKAGES_DIR` 和项目内
-`packages/`、`.hpm/packages/`。
+驱动包安装位置：`~/.hpm/packages`。工程内不再放驱动包目录，只保留
+`virtual/packages/` 虚拟覆盖包；运行时仍支持 `$HPM_PACKAGES_DIR` 用于测试部署。
 
 ## License
 

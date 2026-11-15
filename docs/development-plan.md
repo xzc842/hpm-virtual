@@ -70,7 +70,7 @@ tests/run_pwm_plugin_test.sh
 tests/run_blender_addon_test.sh
 ```
 
-演示工程使用项目内 `packages/`，因此不依赖 `~/.hpm/packages` 也能测试。
+驱动包统一安装到 `~/.hpm/packages`，演示工程不再包含驱动包目录。
 真实设备虚拟资产直接放在 `~/.hpm/packages/gpio-*/debug` 与
 `~/.hpm/packages/pwm-stc90c51-*/debug`，仓库不再保留副本。
 
@@ -113,7 +113,7 @@ virtual/virtual.glb ───────────────┘
 - [x] 欢迎页、打开目录、最近项目、缺少 `virtual/` 的引导（占位环境 / 启动 Blender）。
 - [x] GLB 运行时加载（支持用户目录绝对路径）。
 - [x] 按物体摩擦：`physics` 默认值 + `objects` 覆盖；场景物理跳过设备子树。
-- [x] 包解析（`$HPM_PACKAGES_DIR`、项目内 `packages/`、`~/.hpm/packages`）。
+- [x] 包解析（`$HPM_PACKAGES_DIR`、`~/.hpm/packages`；工程内仅保留虚拟覆盖包）。
 - [x] `virtual.gd` 缓存加载，生命周期回调与 `send/invoke`。
 - [x] `/debugger` 探测、项目路径校验、SSE 输出流、自动重连、输入队列。
 - [x] 演示工程 + 演示包 + 无头测试 + 模拟服务端到端验证。

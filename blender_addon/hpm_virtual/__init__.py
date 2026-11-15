@@ -33,6 +33,7 @@ bl_info = {
 
 class HPMKVItem(bpy.types.PropertyGroup):
     key: bpy.props.StringProperty(name="键", default="")
+    title: bpy.props.StringProperty(name="标题", default="")
     value_type: bpy.props.EnumProperty(
         name="类型",
         items=[
@@ -68,6 +69,7 @@ _CLASSES = (
     operators.HPM_OT_remove_device,
     operators.HPM_OT_add_floor,
     operators.HPM_OT_edit_device,
+    operators.HPM_OT_refresh_virtual_schema,
     operators.HPM_OT_add_kv,
     operators.HPM_OT_remove_kv,
     operators.HPM_OT_add_virtual_device,
