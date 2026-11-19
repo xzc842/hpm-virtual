@@ -25,7 +25,7 @@ extends "res://sdk/virtual_device.gd"
 
 var _wheel_names: Array[String] = []
 const WHEEL_NODES := ["WheelFL", "WheelFR", "WheelRL", "WheelRR"]
-const MAX_ENGINE_FORCE := 10.0
+const MAX_ENGINE_FORCE := 4.0
 
 var _car: Node3D
 var _vehicle: VehicleBody3D
@@ -34,6 +34,12 @@ var _last: Dictionary = {}
 var _accum: Dictionary = {}
 var _sync_time := 0.0
 var _visual_local := Transform3D.IDENTITY
+var _left_force := 0.0
+var _right_force := 0.0
+var _target_left := 0.0
+var _target_right := 0.0
+var _step_hold := 0.0
+var _primed := false
 
 func _on_bind(_ctx: Dictionary) -> void:
 	_car = get_scene_node("Car") as Node3D
@@ -70,6 +76,7 @@ func _on_session_start() -> void:
 	if _vehicle != null:
 		_vehicle.freeze = true
 		_vehicle.sleeping = false
+	_primed = false
 
 func _on_session_stop() -> void:
 	if _vehicle != null:
@@ -90,47 +97,77 @@ func _on_tick(delta: float) -> void:
 		if script == null or not script.has_method("get_angle"):
 			return
 		var angle := float(script.get_angle())
+		if not _primed:
+			_last[name] = angle
+			_accum[name] = 0.0
+			continue
 		_accum[name] = float(_accum.get(name, 0.0)) + angle - float(_last.get(name, 0.0))
 		_last[name] = angle
+	if not _primed:
+		_primed = true
+		_sync_time = 0.0
+		return
 	_sync_time += delta
 	if _sync_time < 0.05:
 		return
 
-	var total := 0.0
-	for name: String in _wheel_names:
-		total += absf(float(_accum.get(name, 0.0)))
-	if total < 0.01:
-		_sync_time = 0.0
-		return
 	var dt := _sync_time
 	_sync_time = 0.0
-	if _vehicle.freeze:
-		_vehicle.freeze = false
-		_vehicle.sleeping = false
-
-	var fl := float(signf(float(_accum.get(_wheel_names[0], 0.0))))
-	var fr := float(signf(float(_accum.get(_wheel_names[1], 0.0))))
-	var rl := float(signf(float(_accum.get(_wheel_names[2], 0.0))))
-	var rr := float(signf(float(_accum.get(_wheel_names[3], 0.0))))
-	var left_angle := (float(_accum[_wheel_names[0]]) + float(_accum[_wheel_names[2]])) * 0.5
-	var right_angle := (float(_accum[_wheel_names[1]]) + float(_accum[_wheel_names[3]])) * 0.5
+	var left_delta := float(_accum[_wheel_names[0]]) + float(_accum[_wheel_names[2]])
+	var right_delta := float(_accum[_wheel_names[1]]) + float(_accum[_wheel_names[3]])
+	var total := absf(left_delta) + absf(right_delta)
 	for name: String in _wheel_names:
 		_accum[name] = 0.0
 
-	var forward := _vehicle.global_transform.basis.z.normalized()
-	var current := _vehicle.linear_velocity.dot(forward)
-	var left_speed := clampf(left_angle * PI / 180.0 / dt * 0.08, -0.6, 0.6)
-	var right_speed := clampf(right_angle * PI / 180.0 / dt * 0.08, -0.6, 0.6)
-	if absf(left_speed) < 0.02: left_speed = 0.0
-	if absf(right_speed) < 0.02: right_speed = 0.0
-	var left_force := clampf((left_speed - current) * _vehicle.mass * 10.0, -MAX_ENGINE_FORCE, MAX_ENGINE_FORCE)
-	var right_force := clampf((right_speed - current) * _vehicle.mass * 10.0, -MAX_ENGINE_FORCE, MAX_ENGINE_FORCE)
+	var target_left := 0.0
+	var target_right := 0.0
+	var braking := false
+	if total >= 0.01:
+		_step_hold = 0.25
+		var left_sign := signf(left_delta)
+		var right_sign := signf(right_delta)
+		if left_sign != 0.0 and right_sign != 0.0 and left_sign != right_sign:
+			# 左右反向：只做原地差速转向。
+			target_left = MAX_ENGINE_FORCE * left_sign
+			target_right = MAX_ENGINE_FORCE * right_sign
+		else:
+			# 同向直行：四轮使用同一个基础驱动力，避免逐轮相位差造成左右摆动。
+			# STEP 只是方向指令；车辆目标速度固定，避免逐 STEP 速度噪声导致车身前后抽动。
+			var target_speed := 0.5 * signf(left_delta + right_delta)
+			var forward := _vehicle.global_transform.basis.z.normalized()
+			var current := _vehicle.linear_velocity.dot(forward)
+			var base := clampf((target_speed - current) * _vehicle.mass * 3.0,
+				-MAX_ENGINE_FORCE, MAX_ENGINE_FORCE)
+			target_left = base
+			target_right = base
+		_target_left = target_left
+		_target_right = target_right
+	else:
+		# 保留上一次目标一小段时间，避免 STEP 脉冲间隙被误判为刹车。
+		_step_hold = maxf(0.0, _step_hold - dt)
+		if _step_hold > 0.0:
+			target_left = _target_left
+			target_right = _target_right
+		else:
+			braking = true
+
+	if _vehicle.freeze:
+		if braking:
+			return
+		_vehicle.freeze = false
+		_vehicle.sleeping = false
+
+	# 低通限速，避免 STEP 脉冲让 engine_force 瞬间跳变。
+	var max_step := MAX_ENGINE_FORCE * 2.0 * dt
+	_left_force = move_toward(_left_force, target_left, max_step)
+	_right_force = move_toward(_right_force, target_right, max_step)
 	if _wheels.size() == 4:
-		_wheels[0].engine_force = left_force
-		_wheels[2].engine_force = left_force
-		_wheels[1].engine_force = right_force
-		_wheels[3].engine_force = right_force
+		_wheels[0].engine_force = _left_force
+		_wheels[2].engine_force = _left_force
+		_wheels[1].engine_force = _right_force
+		_wheels[3].engine_force = _right_force
 		for wheel in _wheels:
-			wheel.brake = 0.0
+			wheel.brake = 2.0 if braking else 0.0
 
 	_car.global_transform = _vehicle.global_transform * _visual_local
+	_car.global_position.y = maxf(0.0, _car.global_position.y)

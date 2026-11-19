@@ -15,10 +15,10 @@
     {
       "node": "VirtualScene/Floor",
       "physics": {
-        "friction": 0.9,
+        "friction": 1.0,
         "mass": 1.0,
         "rough": true,
-        "bounce": 0.0,
+        "bounce": 0.03,
         "enabled": true
       }
     },

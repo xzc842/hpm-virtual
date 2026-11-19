@@ -90,11 +90,11 @@ class HPM_OT_refresh_virtual_schema(bpy.types.Operator):
             old[kv.key] = kv.value
         _fill_kv(item, "config_items", entries, old)
         physics = [
-            ("enabled", "bool", "启用碰撞", "true"),
             ("friction", "float", "摩擦系数", "0.8"),
             ("mass", "float", "质量 (kg)", "1.0"),
-            ("rough", "bool", "Rough", "true"),
             ("bounce", "float", "弹性", "0.0"),
+            ("rough", "bool", "Rough", "true"),
+            ("enabled", "bool", "启用碰撞", "true"),
         ]
         old_physics = {}
         for kv in item.physics_items:

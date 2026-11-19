@@ -1,13 +1,241 @@
 {
   "version": 1,
   "scene": "virtual.glb",
-  "physics": {"friction": 0.85, "mass": 1.0, "rough": true},
   "objects": [
-    {"node": "Floor", "physics": {"friction": 0.9, "mass": 1.0, "rough": true}}
+    {
+      "node": "VirtualScene/Floor",
+      "physics": {
+        "friction": 0.9,
+        "mass": 1.0,
+        "rough": true,
+        "bounce": 0.0,
+        "enabled": true
+      }
+    }
   ],
   "devices": [
-    {"name": "servo", "title": "舵机摆杆", "node": "Devices/servo", "package": "pwm", "version": "1.0.0", "props": {"speed_deg_per_s": 120}},
-    {"name": "sonar", "title": "超声波", "node": "Devices/sonar", "package": "ultrasonic", "version": "1.0.0", "config": {"auto_measure": true}},
-    {"name": "led", "title": "LED", "node": "Devices/led", "package": "gpio", "version": "1.0.0", "props": {"color": "red"}}
+    {
+      "name": "led",
+      "node": "led",
+      "package": "gpio",
+      "version": "1.0.0",
+      "objects": [
+        {
+          "node": "LedCathode",
+          "physics": {
+            "friction": 0.75,
+            "mass": 0.005,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "LedBody/LedDome",
+          "physics": {
+            "friction": 0.35,
+            "mass": 0.02,
+            "rough": true,
+            "bounce": 0.2,
+            "enabled": true
+          }
+        },
+        {
+          "node": "LedBody/LedBarrel",
+          "physics": {
+            "friction": 0.35,
+            "mass": 0.02,
+            "rough": true,
+            "bounce": 0.2,
+            "enabled": true
+          }
+        },
+        {
+          "node": "LedBase",
+          "physics": {
+            "friction": 0.65,
+            "mass": 0.02,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "LedAnode",
+          "physics": {
+            "friction": 0.75,
+            "mass": 0.005,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        }
+      ],
+      "props": {
+        "color": "red"
+      }
+    },
+    {
+      "name": "servo",
+      "node": "VirtualScene/Devices/servo",
+      "package": "pwm",
+      "version": "1.0.0",
+      "objects": [
+        {
+          "node": "ServoTop",
+          "physics": {
+            "friction": 0.45,
+            "mass": 0.03,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "ServoShaft",
+          "physics": {
+            "friction": 0.6,
+            "mass": 0.2,
+            "rough": true,
+            "bounce": 0.05,
+            "enabled": true
+          }
+        },
+        {
+          "node": "ServoMountRight",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.04,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "ServoMountLeft",
+          "physics": {
+            "friction": 0.7,
+            "mass": 0.04,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "ServoHorn/ServoHub",
+          "physics": {
+            "friction": 0.35,
+            "mass": 0.02,
+            "rough": true,
+            "bounce": 0.15,
+            "enabled": true
+          }
+        },
+        {
+          "node": "ServoHorn/ServoArm",
+          "physics": {
+            "friction": 0.35,
+            "mass": 0.02,
+            "rough": true,
+            "bounce": 0.15,
+            "enabled": true
+          }
+        },
+        {
+          "node": "ServoHorn/Rod",
+          "physics": {
+            "friction": 0.35,
+            "mass": 0.02,
+            "rough": true,
+            "bounce": 0.15,
+            "enabled": true
+          }
+        },
+        {
+          "node": "ServoCable",
+          "physics": {
+            "friction": 0.8,
+            "mass": 0.01,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "ServoBody",
+          "physics": {
+            "friction": 0.6,
+            "mass": 0.1,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        }
+      ],
+      "props": {
+        "speed_deg_per_s": 120
+      }
+    },
+    {
+      "name": "sonar",
+      "node": "VirtualScene/Devices/sonar",
+      "package": "ultrasonic",
+      "version": "1.0.0",
+      "objects": [
+        {
+          "node": "RightEye",
+          "physics": {
+            "friction": 0.35,
+            "mass": 0.01,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "Pins",
+          "physics": {
+            "friction": 0.6,
+            "mass": 0.08,
+            "rough": true,
+            "bounce": 0.05,
+            "enabled": true
+          }
+        },
+        {
+          "node": "Mount",
+          "physics": {
+            "friction": 0.75,
+            "mass": 0.02,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "LeftEye",
+          "physics": {
+            "friction": 0.35,
+            "mass": 0.01,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        },
+        {
+          "node": "Body",
+          "physics": {
+            "friction": 0.6,
+            "mass": 0.06,
+            "rough": true,
+            "bounce": 0.0,
+            "enabled": true
+          }
+        }
+      ],
+      "config": {
+        "auto_measure": true
+      }
+    }
   ]
 }

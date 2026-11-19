@@ -164,6 +164,8 @@ static func build_vehicle(root: Node3D, physics: Dictionary) -> VehicleBody3D:
 	body.name = "HPMVehicle"
 	body.mass = clampf(float(physics.get("mass", 1.0)), 0.001, 100000.0)
 	body.physics_material_override = make_material(physics, 0.8)
+	body.center_of_mass_mode = RigidBody3D.CENTER_OF_MASS_MODE_CUSTOM
+	body.center_of_mass = Vector3(0.0, -0.08, 0.0)
 	body.continuous_cd = true
 	body.collision_layer = 1
 	body.collision_mask = 1
@@ -185,13 +187,13 @@ static func build_vehicle(root: Node3D, physics: Dictionary) -> VehicleBody3D:
 		wheel.name = "Wheel" + String(spec.get("name", str(i)))
 		wheel.position = Vector3(float(spec.get("x", 0.0)), float(spec.get("y", -0.05)), float(spec.get("z", 0.0)))
 		wheel.wheel_radius = float(physics.get("wheel_radius", 0.08))
-		wheel.wheel_rest_length = 0.01
+		wheel.wheel_rest_length = 0.015
 		wheel.suspension_travel = 0.06
-		wheel.suspension_stiffness = 150.0
-		wheel.suspension_max_force = 400.0
-		wheel.damping_compression = 10.0
-		wheel.damping_relaxation = 10.0
-		wheel.wheel_friction_slip = 1.2
+		wheel.suspension_stiffness = 60.0
+		wheel.suspension_max_force = 200.0
+		wheel.damping_compression = 4.0
+		wheel.damping_relaxation = 4.0
+		wheel.wheel_friction_slip = 2.0
 		wheel.use_as_traction = true
 		wheel.use_as_steering = false
 		body.add_child(wheel)

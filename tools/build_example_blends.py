@@ -125,8 +125,14 @@ def merge_physics(base: dict, instance: dict) -> dict:
 
 
 def apply_environment_physics(virtual: dict) -> None:
-    rules = {item.get("node"): item.get("physics", {})
-             for item in virtual.get("objects", []) if isinstance(item, dict)}
+    rules = {}
+    for item in virtual.get("objects", []):
+        if not isinstance(item, dict):
+            continue
+        node = str(item.get("node", ""))
+        physics = item.get("physics", {})
+        rules[node] = physics
+        rules[node.rsplit("/", 1)[-1]] = physics
     for obj in bpy.data.objects:
         if obj.type != "MESH" or obj.hpm_physics_owner == "device":
             continue

@@ -134,8 +134,8 @@ class HPM_PT_friction(bpy.types.Panel):
         column = layout.column(align=True)
         column.prop(obj, "hpm_friction", text="摩擦系数")
         column.prop(obj, "hpm_mass", text="质量 (kg)")
-        column.prop(obj, "hpm_rough", text="Rough")
         column.prop(obj, "hpm_bounce", text="弹性")
+        column.prop(obj, "hpm_rough", text="Rough")
         column.prop(obj, "hpm_physics_enabled", text="启用碰撞")
         _draw_kv(column, obj, "hpm_config_items", "hpm_config_index", "config",
                  object_mode=True)

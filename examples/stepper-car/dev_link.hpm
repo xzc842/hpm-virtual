@@ -1,0 +1,187 @@
+{
+  "nodes": [
+    {
+      "id": "mcu",
+      "type": "mcu",
+      "x": -262,
+      "y": -40,
+      "chip": "stc90c51"
+    },
+    {
+      "id": "dev_sonar",
+      "type": "driver",
+      "x": 708,
+      "y": -170,
+      "name": "sonar",
+      "driver": "ultrasonic",
+      "package": "ultrasonic-*",
+      "config": {
+        "effective_distance": "50",
+        "max_distance": "400",
+        "loops_per_cm": "42"
+      },
+      "requires": {
+        "trig": true,
+        "echo": true
+      }
+    },
+    {
+      "id": "dev_stepper_fl",
+      "type": "driver",
+      "x": 388,
+      "y": -200,
+      "name": "stepper_fl",
+      "driver": "stepper",
+      "package": "stepper-*",
+      "config": {},
+      "requires": {
+        "step": true,
+        "dir": true
+      }
+    },
+    {
+      "id": "dev_stepper_rl",
+      "type": "driver",
+      "x": 486,
+      "y": 370,
+      "name": "stepper_rl",
+      "driver": "stepper",
+      "package": "stepper-*",
+      "config": {},
+      "requires": {
+        "step": true,
+        "dir": true
+      }
+    },
+    {
+      "id": "dev_stepper_fr",
+      "type": "driver",
+      "x": 980,
+      "y": 140,
+      "name": "stepper_fr",
+      "driver": "stepper",
+      "package": "stepper-*",
+      "config": {},
+      "requires": {
+        "step": true,
+        "dir": true
+      }
+    },
+    {
+      "id": "dev_stepper_rr",
+      "type": "driver",
+      "x": 346,
+      "y": 664,
+      "name": "stepper_rr",
+      "driver": "stepper",
+      "package": "stepper-*",
+      "config": {},
+      "requires": {
+        "step": true,
+        "dir": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": {
+        "node": "dev_sonar",
+        "port": "trig"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P1_2"
+      }
+    },
+    {
+      "source": {
+        "node": "dev_sonar",
+        "port": "echo"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P1_3"
+      }
+    },
+    {
+      "source": {
+        "node": "dev_stepper_fl",
+        "port": "step"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P1_0"
+      }
+    },
+    {
+      "source": {
+        "node": "dev_stepper_fl",
+        "port": "dir"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P1_1"
+      }
+    },
+    {
+      "source": {
+        "node": "dev_stepper_fr",
+        "port": "step"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P1_4"
+      }
+    },
+    {
+      "source": {
+        "node": "dev_stepper_fr",
+        "port": "dir"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P1_5"
+      }
+    },
+    {
+      "source": {
+        "node": "dev_stepper_rl",
+        "port": "step"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P1_6"
+      }
+    },
+    {
+      "source": {
+        "node": "dev_stepper_rl",
+        "port": "dir"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P1_7"
+      }
+    },
+    {
+      "source": {
+        "node": "dev_stepper_rr",
+        "port": "step"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P3_2"
+      }
+    },
+    {
+      "source": {
+        "node": "dev_stepper_rr",
+        "port": "dir"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P3_3"
+      }
+    }
+  ]
+}

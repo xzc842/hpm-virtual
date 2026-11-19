@@ -308,6 +308,6 @@ def add_floor(context, size: float = 4.0):
     floor.hpm_physics_enabled = True
     floor.hpm_friction = 0.9
     floor.hpm_rough = True
-    floor.hpm_bounce = 0.0
+    floor.hpm_bounce = 0.03
     floor.hpm_physics_owner = "environment"
     return floor

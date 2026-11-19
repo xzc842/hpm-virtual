@@ -1,0 +1,98 @@
+{
+  "nodes": [
+    {
+      "id": "mcu",
+      "type": "mcu",
+      "x": -212,
+      "y": 84,
+      "chip": "stc90c51"
+    },
+    {
+      "id": "dev_servo",
+      "type": "driver",
+      "x": 60,
+      "y": 100,
+      "name": "servo",
+      "driver": "pwm",
+      "package": "pwm-stc90c51",
+      "config": {},
+      "requires": {
+        "pin": true
+      }
+    },
+    {
+      "id": "dev_sonar",
+      "type": "driver",
+      "x": 390,
+      "y": 98,
+      "name": "sonar",
+      "driver": "ultrasonic",
+      "package": "ultrasonic-*",
+      "config": {
+        "effective_distance": "10",
+        "max_distance": "400",
+        "loops_per_cm": "42",
+        "step_cm": "4"
+      },
+      "requires": {
+        "trig": true,
+        "echo": true
+      }
+    },
+    {
+      "id": "dev_led",
+      "type": "driver",
+      "x": 118,
+      "y": 436,
+      "name": "led",
+      "driver": "gpio",
+      "package": "gpio-*",
+      "config": {},
+      "requires": {
+        "pin": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": {
+        "node": "dev_servo",
+        "port": "pin"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P1_0"
+      }
+    },
+    {
+      "source": {
+        "node": "dev_sonar",
+        "port": "trig"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P1_1"
+      }
+    },
+    {
+      "source": {
+        "node": "dev_sonar",
+        "port": "echo"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P1_2"
+      }
+    },
+    {
+      "source": {
+        "node": "dev_led",
+        "port": "pin"
+      },
+      "target": {
+        "node": "mcu",
+        "port": "P1_3"
+      }
+    }
+  ]
+}
